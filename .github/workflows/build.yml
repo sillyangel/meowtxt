@@ -12,7 +12,6 @@ permissions:
   contents: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DEBIAN_FRONTEND: noninteractive
 
 jobs:
@@ -22,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -51,7 +50,7 @@ jobs:
           THEOS: ${{ runner.temp }}/theos
 
       - name: Upload Debian package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: meowtxt-rootless
           path: packages/*.deb
@@ -75,10 +74,10 @@ jobs:
 
     steps:
       - name: Checkout repository (for Sileo assets)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Download Debian package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: meowtxt-rootless
           path: packages/
@@ -96,7 +95,7 @@ jobs:
             exit 0
           fi
 
-          mkdir -p ~/.ssh
+          mkdir -p ~/.ssh /tmp/meowtxt-stage
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
@@ -115,6 +114,10 @@ jobs:
           DEB_FILE=$(ls packages/*.deb | head -1)
           VERSION=$(dpkg-deb -f "$DEB_FILE" Version)
           echo "Deploying dev.sillyangel.meowtxt v${VERSION} (${DEB_FILE})..."
+
+          cp "$DEB_FILE" /tmp/meowtxt-stage/meowtxt.deb
+          cp layout/usr/share/meowd/sileo/icon.png /tmp/meowtxt-stage/meowtxt-icon.png
+          cp layout/usr/share/meowd/web/sileo-banner.png /tmp/meowtxt-stage/meowtxt-banner.png
 
           python3 - "$VERSION" <<'PY'
           import json, sys
@@ -141,9 +144,9 @@ jobs:
                   }
               ],
           }
-          with open("/tmp/meowtxt-index.json", "w") as f:
+          with open("/tmp/meowtxt-stage/meowtxt-index.json", "w") as f:
               json.dump(index_data, f, indent=2)
-          with open("/tmp/meowtxt-description.md", "w") as f:
+          with open("/tmp/meowtxt-stage/meowtxt-description.md", "w") as f:
               f.write(
                   "meowtxt (dev.sillyangel.meowtxt) is an on-device iMessage Web, PWA / Chrome Isolated Web App (IWA), "
                   "and REST + Server-Sent Events (SSE) API daemon for rootless iOS 15-16 (meowd on port 8737).\n\n"
@@ -153,7 +156,7 @@ jobs:
                   "- Hardware HEIC & Sticker Conversion: Automatically transcodes .heic/.heif photos to JPEG and stickers to PNG on-device.\n"
                   "- Native iOS Settings: Toggle the server on/off and view or copy your access token in Settings -> meowtxt.\n"
               )
-          with open("/tmp/deploy-meowtxt.sh", "w") as f:
+          with open("/tmp/meowtxt-stage/deploy-meowtxt.sh", "w") as f:
               f.write("\n".join([
                   "#!/usr/bin/env bash",
                   "set -euo pipefail",
@@ -166,22 +169,17 @@ jobs:
                   "cd /var/www/sileo",
                   "source venv/bin/activate",
                   "python3 index.py",
-                  "rm -f /tmp/deploy-meowtxt.sh",
+                  "rm -f /tmp/deploy-meowtxt.sh /tmp/test_scp",
                   "echo '__MEOWTXT_DEPLOY_OK__'",
                   "",
               ]))
           PY
 
-          scp "$DEB_FILE" hackclub-proxy:/tmp/meowtxt.deb
-          scp layout/usr/share/meowd/sileo/icon.png hackclub-proxy:/tmp/meowtxt-icon.png
-          scp layout/usr/share/meowd/web/sileo-banner.png hackclub-proxy:/tmp/meowtxt-banner.png
-          scp /tmp/meowtxt-index.json hackclub-proxy:/tmp/meowtxt-index.json
-          scp /tmp/meowtxt-description.md hackclub-proxy:/tmp/meowtxt-description.md
-          scp /tmp/deploy-meowtxt.sh hackclub-proxy:/tmp/deploy-meowtxt.sh
+          tar -czf /tmp/meowtxt-bundle.tar.gz -C /tmp/meowtxt-stage .
 
-          # hackclub.app SSH proxy logs into fish as root and closes the channel with -1 (exit 255),
-          # so run via bash and verify our completion marker.
-          OUT=$(ssh hackclub-proxy "bash /tmp/deploy-meowtxt.sh" 2>&1 || true)
+          # Stream bundle & execute deploy script in a single SSH connection
+          # (hackclub.app SSH proxy closes sessions with -1 / exit 255, so verify via completion marker)
+          OUT=$(ssh hackclub-proxy "bash -c 'tar -xzf - -C /tmp && bash /tmp/deploy-meowtxt.sh'" < /tmp/meowtxt-bundle.tar.gz 2>&1 || true)
           echo "$OUT"
           echo "$OUT" | grep -q "__MEOWTXT_DEPLOY_OK__"
           echo "Published dev.sillyangel.meowtxt v${VERSION} to https://sileo.sillyangel.dev"
