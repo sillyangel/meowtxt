@@ -13,6 +13,7 @@ chown root:wheel "$PLIST"
 chmod 644 "$PLIST"
 launchctl unload "$PLIST" 2>/dev/null
 launchctl load "$PLIST"
+killall Preferences 2>/dev/null || true
 echo "meowtxt: daemon started. Web UI on http://<iphone-ip>:8737"
 echo "meowtxt: access token is in /var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist (key: token)"
 exit 0

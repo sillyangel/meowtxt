@@ -100,6 +100,13 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
 
           cat > ~/.ssh/config <<EOF
+          Host hackclub-root
+              HostName ${PROXY_HOST}
+              User root
+              IdentityFile ~/.ssh/deploy_key
+              StrictHostKeyChecking no
+              UserKnownHostsFile /dev/null
+
           Host hackclub-proxy
               HostName ${PROXY_HOST}
               User ${PROXY_USER}
@@ -121,22 +128,38 @@ jobs:
           VERSION=$(dpkg-deb -f "$DEB_FILE" Version)
           echo "Deploying dev.sillyangel.meowtxt v${VERSION} (${DEB_FILE})..."
 
-          # Try ProxyJump to root@hel1.sillyangel.dev first; fall back to direct hackclub-proxy port-forward
-          REMOTE="hel1"
-          if ! ssh -o ConnectTimeout=10 hel1 "true" 2>/dev/null; then
+          # Connect via root@hackclub.app (direct proxy to hel1), ProxyJump to root@hel1.sillyangel.dev, or angel@hackclub.app
+          if ssh -o ConnectTimeout=10 hackclub-root "true" 2>/dev/null; then
+            REMOTE="hackclub-root"
+            SUDO=""
+          elif ssh -o ConnectTimeout=10 hel1 "true" 2>/dev/null; then
+            REMOTE="hel1"
+            SUDO=""
+          else
             REMOTE="hackclub-proxy"
+            SUDO="sudo"
           fi
+          echo "Connected via ${REMOTE}"
 
-          ssh "$REMOTE" "sudo mkdir -p /var/www/sileo/Packages/meowtxt/silica_data"
+          ssh "$REMOTE" "${SUDO} mkdir -p /var/www/sileo/Packages/meowtxt/silica_data"
           scp "$DEB_FILE" "${REMOTE}:/tmp/meowtxt.deb"
           scp layout/usr/share/meowd/sileo/icon.png "${REMOTE}:/tmp/meowtxt-icon.png"
           scp layout/usr/share/meowd/web/sileo-banner.png "${REMOTE}:/tmp/meowtxt-banner.png"
 
-          ssh "$REMOTE" "sudo bash -c '
+          ssh "$REMOTE" "${SUDO} bash -c '
             set -euo pipefail
             mv /tmp/meowtxt.deb /var/www/sileo/Packages/meowtxt/tweak.deb
             mv /tmp/meowtxt-icon.png /var/www/sileo/Packages/meowtxt/silica_data/icon.png
             mv /tmp/meowtxt-banner.png /var/www/sileo/Packages/meowtxt/silica_data/banner.png
+            cat > /var/www/sileo/Packages/meowtxt/silica_data/description.md <<MD
+          **meowtxt** (dev.sillyangel.meowtxt) is an on-device iMessage Web, PWA / Chrome Isolated Web App (IWA), and REST + Server-Sent Events (SSE) API daemon for rootless iOS 15–16 (meowd on port 8737).
+
+          - **Real-Time Web Client**: Modular ES-module web UI with two-way synced pinned conversations, contact avatars, live typing indicators, tapbacks, inline replies, and bubble/screen effects.
+          - **Web, Push & Webhook Notifications**: Live alerts when iMessages are received, sent, delivered, or read.
+          - **Focus / DND & Notify Anyway**: Detects Focus / Do Not Disturb status via StatusKit and supports manual \"Notify Anyway\" breakthrough (POST /api/notify).
+          - **Hardware HEIC & Sticker Conversion**: Automatically transcodes .heic/.heif photos to JPEG and stickers to PNG on-device.
+          - **Native iOS Settings**: Toggle the server on/off and view or copy your access token in **Settings → meowtxt**.
+          MD
             cat > /var/www/sileo/Packages/meowtxt/silica_data/index.json <<JSON
           {
             \"bundle_id\": \"dev.sillyangel.meowtxt\",
@@ -147,7 +170,7 @@ jobs:
             \"developer\": { \"name\": \"angel\", \"email\": \"angel@sillyangel.dev\" },
             \"maintainer\": { \"name\": \"angel\", \"email\": \"angel@sillyangel.dev\" },
             \"section\": \"Networking\",
-            \"dependencies\": \"firmware (>= 15.0)\",
+            \"dependencies\": \"firmware (>= 15.0), preferenceloader (>= 2.2.3)\",
             \"works_min\": \"15.0\",
             \"works_max\": \"16.9\",
             \"featured\": \"true\",
@@ -159,9 +182,10 @@ jobs:
           JSON
             if [ -d /var/www/sileo/venv ]; then
               cd /var/www/sileo && source venv/bin/activate && python3 index.py
-            elif command -v aptly >/dev/null 2>&1; then
-              aptly -config=/etc/aptly.conf repo add tweaks /var/www/sileo/Packages/meowtxt/tweak.deb
-              aptly -config=/etc/aptly.conf publish update -skip-signing stable
+            fi
+            if command -v aptly >/dev/null 2>&1 && [ -f /etc/aptly.conf ]; then
+              aptly -config=/etc/aptly.conf repo add tweaks /var/www/sileo/Packages/meowtxt/tweak.deb || true
+              aptly -config=/etc/aptly.conf publish update -skip-signing stable || true
             fi
           '"
           echo "Published dev.sillyangel.meowtxt v${VERSION} to https://sileo.sillyangel.dev"
