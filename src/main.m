@@ -13,23 +13,102 @@ static NSString *const kCacheDir = @"/var/mobile/Library/Caches/meowd";
 static const uint16_t kDefaultPort = 8737;
 
 static NSString *gToken;
+static BOOL gEnabled = YES;
+static BOOL gRequireAuth = YES;
+static NSDate *gPrefsLastMod;
+static NSMutableDictionary<NSString *, NSNumber *> *gNotificationEvents;
+static NSMutableArray<NSString *> *gNotificationWebhooks;
+static NSMutableDictionary<NSString *, NSNumber *> *gNotifiedStateByGUID;
 
 #pragma mark - config
+
+static NSString *MWGenerateHexToken(void) {
+    uint8_t raw[16];
+    arc4random_buf(raw, sizeof(raw));
+    NSMutableString *hex = [NSMutableString string];
+    for (size_t i = 0; i < sizeof(raw); i++) [hex appendFormat:@"%02x", raw[i]];
+    return hex;
+}
 
 static NSDictionary *MWLoadConfig(void) {
     NSMutableDictionary *cfg = [[NSDictionary dictionaryWithContentsOfFile:kPrefsPath] mutableCopy] ?: [NSMutableDictionary dictionary];
     BOOL dirty = NO;
-    if (![cfg[@"token"] isKindOfClass:NSString.class] || [cfg[@"token"] length] < 8) {
-        uint8_t raw[16];
-        arc4random_buf(raw, sizeof(raw));
-        NSMutableString *hex = [NSMutableString string];
-        for (size_t i = 0; i < sizeof(raw); i++) [hex appendFormat:@"%02x", raw[i]];
-        cfg[@"token"] = hex;
+    if ([cfg[@"regenerateToken"] boolValue]) {
+        cfg[@"token"] = MWGenerateHexToken();
+        cfg[@"regenerateToken"] = @NO;
+        dirty = YES;
+    }
+    if (![cfg[@"token"] isKindOfClass:NSString.class] || [cfg[@"token"] length] < 4) {
+        cfg[@"token"] = MWGenerateHexToken();
         dirty = YES;
     }
     if (!cfg[@"port"]) { cfg[@"port"] = @(kDefaultPort); dirty = YES; }
-    if (dirty) [cfg writeToFile:kPrefsPath atomically:YES];
+    if (cfg[@"enabled"] == nil) { cfg[@"enabled"] = @YES; dirty = YES; }
+    if (cfg[@"requireAuth"] == nil) { cfg[@"requireAuth"] = @YES; dirty = YES; }
+
+    gToken = [cfg[@"token"] description];
+    gEnabled = cfg[@"enabled"] ? [cfg[@"enabled"] boolValue] : YES;
+    gRequireAuth = cfg[@"requireAuth"] ? [cfg[@"requireAuth"] boolValue] : YES;
+
+    NSDictionary *savedNotifs = [cfg[@"notifications"] isKindOfClass:NSDictionary.class] ? cfg[@"notifications"] : @{};
+    NSDictionary *savedEvents = [savedNotifs[@"events"] isKindOfClass:NSDictionary.class] ? savedNotifs[@"events"] : @{};
+    BOOL evRec = cfg[@"notifReceived"] != nil ? [cfg[@"notifReceived"] boolValue] : (savedEvents[@"received"] != nil ? [savedEvents[@"received"] boolValue] : YES);
+    BOOL evSent = cfg[@"notifSent"] != nil ? [cfg[@"notifSent"] boolValue] : (savedEvents[@"sent"] != nil ? [savedEvents[@"sent"] boolValue] : YES);
+    BOOL evDel = cfg[@"notifDelivered"] != nil ? [cfg[@"notifDelivered"] boolValue] : (savedEvents[@"delivered"] != nil ? [savedEvents[@"delivered"] boolValue] : YES);
+    BOOL evRead = cfg[@"notifRead"] != nil ? [cfg[@"notifRead"] boolValue] : (savedEvents[@"read"] != nil ? [savedEvents[@"read"] boolValue] : YES);
+
+    if (!gNotificationEvents) gNotificationEvents = [NSMutableDictionary dictionary];
+    @synchronized (gNotificationEvents) {
+        gNotificationEvents[@"received"] = @(evRec);
+        gNotificationEvents[@"sent"] = @(evSent);
+        gNotificationEvents[@"delivered"] = @(evDel);
+        gNotificationEvents[@"read"] = @(evRead);
+        if (!gNotificationWebhooks) gNotificationWebhooks = [NSMutableArray array];
+        [gNotificationWebhooks removeAllObjects];
+        if ([savedNotifs[@"webhooks"] isKindOfClass:NSArray.class]) {
+            for (id u in savedNotifs[@"webhooks"]) {
+                if ([u isKindOfClass:NSString.class] && [u length]) [gNotificationWebhooks addObject:u];
+            }
+        }
+    }
+    if (!gNotifiedStateByGUID) gNotifiedStateByGUID = [NSMutableDictionary dictionary];
+
+    if (dirty) {
+        cfg[@"notifReceived"] = @(evRec);
+        cfg[@"notifSent"] = @(evSent);
+        cfg[@"notifDelivered"] = @(evDel);
+        cfg[@"notifRead"] = @(evRead);
+        [cfg writeToFile:kPrefsPath atomically:YES];
+    }
+    NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:kPrefsPath error:nil];
+    gPrefsLastMod = attrs[NSFileModificationDate];
     return cfg;
+}
+
+static void MWReloadConfigIfChanged(void) {
+    NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:kPrefsPath error:nil];
+    NSDate *mod = attrs[NSFileModificationDate];
+    if (mod && (!gPrefsLastMod || ![mod isEqualToDate:gPrefsLastMod])) {
+        MWLoadConfig();
+        MWLog(@"reloaded preferences from Settings (enabled=%d, requireAuth=%d)", gEnabled, gRequireAuth);
+    }
+}
+
+static void MWSaveNotificationConfig(void) {
+    @synchronized (gNotificationEvents) {
+        NSMutableDictionary *cfg = [[NSDictionary dictionaryWithContentsOfFile:kPrefsPath] mutableCopy] ?: [NSMutableDictionary dictionary];
+        cfg[@"notifications"] = @{
+            @"events": [gNotificationEvents copy],
+            @"webhooks": [gNotificationWebhooks copy],
+        };
+        cfg[@"notifReceived"] = gNotificationEvents[@"received"] ?: @YES;
+        cfg[@"notifSent"] = gNotificationEvents[@"sent"] ?: @YES;
+        cfg[@"notifDelivered"] = gNotificationEvents[@"delivered"] ?: @YES;
+        cfg[@"notifRead"] = gNotificationEvents[@"read"] ?: @YES;
+        [cfg writeToFile:kPrefsPath atomically:YES];
+        NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:kPrefsPath error:nil];
+        gPrefsLastMod = attrs[NSFileModificationDate];
+    }
 }
 
 #pragma mark - event hub (SSE)
@@ -169,6 +248,49 @@ static void MWBroadcastPinnedUpdate(void) {
     MWBroadcast(@"pinned", @{@"pinnedIdentifiers": pins});
 }
 
+static NSDictionary *MWEmitNotification(NSString *type, NSString *title, NSString *body,
+                                        NSString *chatGUID, NSString *avatarUrl, NSDictionary *msg, BOOL force) {
+    BOOL enabled = YES;
+    NSArray<NSString *> *webhooks = nil;
+    @synchronized (gNotificationEvents) {
+        if (!force && gNotificationEvents[type] != nil) {
+            enabled = [gNotificationEvents[type] boolValue];
+        }
+        webhooks = [gNotificationWebhooks copy];
+    }
+    long long nowMs = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
+    NSString *msgGuid = [msg[@"guid"] isKindOfClass:NSString.class] ? msg[@"guid"] : [[NSUUID UUID] UUIDString];
+    NSDictionary *payload = @{
+        @"id": [NSString stringWithFormat:@"notif-%@-%@", msgGuid, type],
+        @"type": type ?: @"received",
+        @"title": title ?: @"meowtxt",
+        @"body": body ?: @"",
+        @"chat": chatGUID ?: [NSNull null],
+        @"avatarUrl": avatarUrl ?: [NSNull null],
+        @"icon": avatarUrl ?: @"/icon-192.png",
+        @"tag": [NSString stringWithFormat:@"meow-%@-%@", chatGUID ?: @"general", type],
+        @"message": msg ?: [NSNull null],
+        @"timestamp": @(nowMs),
+    };
+    if (enabled || force) {
+        MWBroadcast(@"notification", payload);
+        if (webhooks.count) {
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:payload options:0 error:nil];
+            for (NSString *urlStr in webhooks) {
+                NSURL *u = [NSURL URLWithString:urlStr];
+                if (!u) continue;
+                NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:u];
+                req.HTTPMethod = @"POST";
+                [req setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+                [req setValue:[NSString stringWithFormat:@"meowtxt-%@", type] forHTTPHeaderField:@"X-Meow-Event"];
+                req.HTTPBody = jsonData;
+                [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {}] resume];
+            }
+        }
+    }
+    return payload;
+}
+
 static void MWStartPoller(void) {
     dispatch_queue_t q = dispatch_queue_create("meow.poller", DISPATCH_QUEUE_SERIAL);
     __block long long lastRowid = [[MWDatabase shared] maxMessageROWID];
@@ -178,34 +300,104 @@ static void MWStartPoller(void) {
     dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), 400 * NSEC_PER_MSEC, 50 * NSEC_PER_MSEC);
     dispatch_source_set_event_handler(timer, ^{
         @autoreleasepool {
+            MWReloadConfigIfChanged();
             if ([[MWIMBridge shared] reloadPinnedFromDiskIfChanged]) {
                 MWBroadcastPinnedUpdate();
             }
             if (![[MWDatabase shared] hasChanged]) return;
             long long now = [MWDatabase appleTimeNow];
+            long long nowMs = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
 
             NSArray *fresh = [[MWDatabase shared] messagesAfterROWID:lastRowid limit:200];
             NSMutableSet *touchedChats = [NSMutableSet set];
             for (NSDictionary *m in fresh) {
                 lastRowid = MAX(lastRowid, [m[@"id"] longLongValue]);
                 if (!MWIsIMessageChat(m[@"chat"])) continue;
-                [touchedChats addObject:m[@"chat"]];
+                NSString *chatGUID = m[@"chat"];
+                [touchedChats addObject:chatGUID];
+                NSDictionary *names = MWNamesForMessages(@[m]);
+                NSDictionary *avatars = MWAvatarsForMessages(@[m]);
                 MWBroadcast(@"message", @{
                     @"message": m,
-                    @"names": MWNamesForMessages(@[m]),
-                    @"avatars": MWAvatarsForMessages(@[m]),
+                    @"names": names,
+                    @"avatars": avatars,
                 });
+
+                if ([m[@"itemType"] intValue] == 0 && [m[@"guid"] isKindOfClass:NSString.class]) {
+                    NSString *guid = m[@"guid"];
+                    BOOL fromMe = [m[@"fromMe"] boolValue];
+                    int mask = 1 | ([m[@"delivered"] boolValue] ? 2 : 0) | ([m[@"read"] boolValue] ? 4 : 0);
+                    gNotifiedStateByGUID[guid] = @(mask);
+
+                    NSDictionary *chatObj = [[MWDatabase shared] chatWithGUID:chatGUID];
+                    NSDictionary *decChat = chatObj ? MWDecorateChat(chatObj) : nil;
+                    NSString *chatTitle = [decChat[@"title"] isKindOfClass:NSString.class] && [decChat[@"title"] length]
+                        ? decChat[@"title"]
+                        : ([m[@"sender"] isKindOfClass:NSString.class] ? (names[m[@"sender"]] ?: m[@"sender"]) : chatGUID);
+                    NSString *avatarUrl = [decChat[@"avatarUrl"] isKindOfClass:NSString.class] ? decChat[@"avatarUrl"] : nil;
+                    NSString *textPreview = [m[@"text"] isKindOfClass:NSString.class] && [m[@"text"] length]
+                        ? m[@"text"]
+                        : ([m[@"attachments"] count] ? @"📎 Attachment" : @"iMessage");
+
+                    if (fromMe) {
+                        MWEmitNotification(@"sent",
+                                           [NSString stringWithFormat:@"Sent to %@", chatTitle],
+                                           textPreview, chatGUID, avatarUrl, m, NO);
+                    } else {
+                        NSString *sender = [m[@"sender"] isKindOfClass:NSString.class] ? (names[m[@"sender"]] ?: m[@"sender"]) : chatTitle;
+                        MWEmitNotification(@"received",
+                                           sender,
+                                           textPreview, chatGUID, avatarUrl, m, NO);
+                    }
+                }
             }
 
             NSArray *updated = [[MWDatabase shared] messagesUpdatedSince:lastCheck - 2000000000LL];
             lastCheck = now;
             for (NSDictionary *m in updated) {
                 if (!MWIsIMessageChat(m[@"chat"])) continue;
+                NSString *chatGUID = m[@"chat"];
+                NSDictionary *names = MWNamesForMessages(@[m]);
+                NSDictionary *avatars = MWAvatarsForMessages(@[m]);
                 MWBroadcast(@"updated", @{
                     @"message": m,
-                    @"names": MWNamesForMessages(@[m]),
-                    @"avatars": MWAvatarsForMessages(@[m]),
+                    @"names": names,
+                    @"avatars": avatars,
                 });
+
+                if ([m[@"itemType"] intValue] == 0 && [m[@"fromMe"] boolValue] && [m[@"guid"] isKindOfClass:NSString.class]) {
+                    NSString *guid = m[@"guid"];
+                    int prevMask = [gNotifiedStateByGUID[guid] intValue];
+                    BOOL isRead = [m[@"read"] boolValue];
+                    BOOL isDelivered = [m[@"delivered"] boolValue];
+                    long long dateRead = [m[@"dateRead"] longLongValue];
+                    long long dateDelivered = [m[@"dateDelivered"] longLongValue];
+
+                    NSDictionary *chatObj = [[MWDatabase shared] chatWithGUID:chatGUID];
+                    NSDictionary *decChat = chatObj ? MWDecorateChat(chatObj) : nil;
+                    NSString *chatTitle = [decChat[@"title"] isKindOfClass:NSString.class] && [decChat[@"title"] length]
+                        ? decChat[@"title"] : chatGUID;
+                    NSString *avatarUrl = [decChat[@"avatarUrl"] isKindOfClass:NSString.class] ? decChat[@"avatarUrl"] : nil;
+                    NSString *textPreview = [m[@"text"] isKindOfClass:NSString.class] && [m[@"text"] length]
+                        ? m[@"text"] : @"iMessage";
+
+                    if (isRead && !(prevMask & 4) && (prevMask != 0 || (dateRead > 0 && (nowMs - dateRead) < 15000LL))) {
+                        gNotifiedStateByGUID[guid] = @(prevMask | 1 | 2 | 4);
+                        MWEmitNotification(@"read",
+                                           [NSString stringWithFormat:@"Read by %@", chatTitle],
+                                           textPreview, chatGUID, avatarUrl, m, NO);
+                    } else if (isDelivered && !isRead && !(prevMask & 2) && (prevMask != 0 || (dateDelivered > 0 && (nowMs - dateDelivered) < 15000LL))) {
+                        gNotifiedStateByGUID[guid] = @(prevMask | 1 | 2);
+                        NSString *delivTitle = [m[@"wasDeliveredQuietly"] boolValue]
+                            ? [NSString stringWithFormat:@"Delivered Quietly to %@ 🌙", chatTitle]
+                            : [NSString stringWithFormat:@"Delivered to %@", chatTitle];
+                        MWEmitNotification(@"delivered",
+                                           delivTitle,
+                                           textPreview, chatGUID, avatarUrl, m, NO);
+                    } else if (prevMask == 0) {
+                        gNotifiedStateByGUID[guid] = @(1 | (isDelivered ? 2 : 0) | (isRead ? 4 : 0));
+                    }
+                }
             }
 
             NSArray<NSString *> *pins = [[MWIMBridge shared] pinnedIdentifiers];
@@ -225,20 +417,44 @@ static void MWStartPoller(void) {
 
 static NSString *MWMimeForPath(NSString *path, NSString *fallback) {
     if (fallback.length) return fallback;
-    UTType *t = [UTType typeWithFilenameExtension:path.pathExtension];
+    NSString *ext = path.pathExtension.lowercaseString;
+    if ([ext isEqualToString:@"webmanifest"]) return @"application/manifest+json; charset=utf-8";
+    if ([ext isEqualToString:@"svg"]) return @"image/svg+xml";
+    if ([ext isEqualToString:@"ico"]) return @"image/x-icon";
+    if ([ext isEqualToString:@"json"]) return @"application/json; charset=utf-8";
+    UTType *t = [UTType typeWithFilenameExtension:ext];
     return t.preferredMIMEType ?: @"application/octet-stream";
 }
 
-// Transcodes HEIC/HEIF/TIFF (or generates fast 640px thumbnails when `thumb` is YES) into cached JPEGs.
-static NSString *MWBrowserFriendlyImage(NSString *path, long long rowid, BOOL thumb) {
-    NSString *ext = path.pathExtension.lowercaseString;
-    BOOL needsTranscode = [@[@"heic", @"heif", @"tif", @"tiff"] containsObject:ext];
-    if (!needsTranscode && !thumb) return nil;
-    if (thumb && ![@[@"heic", @"heif", @"tif", @"tiff", @"jpg", @"jpeg", @"png"] containsObject:ext]) return nil;
+// Transcodes HEIC/HEIF/AVCI/TIFF/BMP (or generates fast 640px thumbnails when `thumb` is YES) into cached JPEGs/PNGs.
+static NSString *MWBrowserFriendlyImage(NSString *path, long long rowid, BOOL thumb, NSString *uti, NSString *mime, NSString **outMime) {
+    NSString *ext = path.pathExtension.lowercaseString ?: @"";
+    NSString *utiLow = uti.lowercaseString ?: @"";
+    NSString *mimeLow = mime.lowercaseString ?: @"";
 
-    NSString *suffix = thumb ? @"_thumb.jpg" : @".jpg";
-    NSString *out = [kCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%lld%@", rowid, suffix]];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:out]) return out;
+    BOOL isHeicOrTiff = [@[@"heic", @"heif", @"heics", @"avci", @"tif", @"tiff", @"bmp"] containsObject:ext] ||
+                        [utiLow containsString:@"heic"] || [utiLow containsString:@"heif"] ||
+                        [utiLow containsString:@"avci"] || [utiLow containsString:@"tiff"] ||
+                        [mimeLow containsString:@"heic"] || [mimeLow containsString:@"heif"] ||
+                        [mimeLow containsString:@"tiff"];
+    BOOL isStandardImage = [@[@"jpg", @"jpeg", @"png", @"gif", @"webp"] containsObject:ext] ||
+                           [utiLow containsString:@"jpeg"] || [utiLow containsString:@"png"] ||
+                           [mimeLow hasPrefix:@"image/"];
+
+    if (!isHeicOrTiff && !(thumb && isStandardImage)) return nil;
+    if ([ext isEqualToString:@"gif"] || [mimeLow isEqualToString:@"image/gif"]) return nil;
+
+    NSString *jpgOut = [kCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"v2_%lld%@", rowid, thumb ? @"_thumb.jpg" : @".jpg"]];
+    NSString *pngOut = [kCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"v2_%lld%@", rowid, thumb ? @"_thumb.png" : @".png"]];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:pngOut]) {
+        if (outMime) *outMime = @"image/png";
+        return pngOut;
+    }
+    if ([[NSFileManager defaultManager] fileExistsAtPath:jpgOut]) {
+        if (outMime) *outMime = @"image/jpeg";
+        return jpgOut;
+    }
+
     [[NSFileManager defaultManager] createDirectoryAtPath:kCacheDir withIntermediateDirectories:YES attributes:nil error:nil];
     CGImageSourceRef src = CGImageSourceCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], NULL);
     if (!src) return nil;
@@ -248,18 +464,33 @@ static NSString *MWBrowserFriendlyImage(NSString *path, long long rowid, BOOL th
         (id)kCGImageSourceThumbnailMaxPixelSize: thumb ? @640 : @1800,
     };
     CGImageRef img = CGImageSourceCreateThumbnailAtIndex(src, 0, (__bridge CFDictionaryRef)opts);
+    if (!img) {
+        img = CGImageSourceCreateThumbnailAtIndex(src, 0, (__bridge CFDictionaryRef)@{
+            (id)kCGImageSourceCreateThumbnailFromImageIfAbsent: @YES,
+            (id)kCGImageSourceCreateThumbnailWithTransform: @YES,
+        });
+    }
     CFRelease(src);
     if (!img) return nil;
-    CGImageDestinationRef dst = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:out],
-                                                                (__bridge CFStringRef)@"public.jpeg", 1, NULL);
+
+    CGImageAlphaInfo alpha = CGImageGetAlphaInfo(img);
+    BOOL hasAlpha = (alpha == kCGImageAlphaPremultipliedLast || alpha == kCGImageAlphaPremultipliedFirst ||
+                     alpha == kCGImageAlphaLast || alpha == kCGImageAlphaFirst);
+    NSString *targetPath = hasAlpha ? pngOut : jpgOut;
+    CFStringRef targetUTI = hasAlpha ? (__bridge CFStringRef)@"public.png" : (__bridge CFStringRef)@"public.jpeg";
+
+    CGImageDestinationRef dst = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:targetPath],
+                                                                targetUTI, 1, NULL);
     BOOL ok = NO;
     if (dst) {
-        CGImageDestinationAddImage(dst, img, (__bridge CFDictionaryRef)@{(id)kCGImageDestinationLossyCompressionQuality: thumb ? @0.78 : @0.85});
+        NSDictionary *destOpts = hasAlpha ? @{} : @{(id)kCGImageDestinationLossyCompressionQuality: thumb ? @0.80 : @0.88};
+        CGImageDestinationAddImage(dst, img, (__bridge CFDictionaryRef)destOpts);
         ok = CGImageDestinationFinalize(dst);
         CFRelease(dst);
     }
     CGImageRelease(img);
-    return ok ? out : nil;
+    if (ok && outMime) *outMime = hasAlpha ? @"image/png" : @"image/jpeg";
+    return ok ? targetPath : nil;
 }
 
 static MWResponse *MWServeFile(NSString *path, NSString *mime, MWRequest *req, NSString *downloadName) {
@@ -307,6 +538,7 @@ static NSArray<NSString *> *MWAddressList(id v) {
 static NSString *MWStr(id v) { return [v isKindOfClass:NSString.class] && [v length] ? v : nil; }
 
 static BOOL MWAuthorized(MWRequest *req) {
+    if (!gRequireAuth) return YES;
     NSString *auth = req.headers[@"authorization"];
     NSString *tok = nil;
     if ([auth.lowercaseString hasPrefix:@"bearer "]) tok = [auth substringFromIndex:7];
@@ -317,15 +549,21 @@ static BOOL MWAuthorized(MWRequest *req) {
 
 static MWResponse *MWStatic(MWRequest *req) {
     NSString *rel = [req.path isEqualToString:@"/"] ? @"index.html" : [req.path substringFromIndex:1];
+    if ([rel isEqualToString:@".well-known/manifest.webmanifest"]) {
+        rel = @"manifest.webmanifest";
+    }
     if ([rel containsString:@".."]) return nil;
     NSString *path = [kWebRoot stringByAppendingPathComponent:rel];
     BOOL dir = NO;
     if (![[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&dir] || dir) return nil;
     NSData *d = [NSData dataWithContentsOfFile:path];
     NSString *mime = MWMimeForPath(path, nil);
-    if ([mime hasPrefix:@"text/"] || [mime containsString:@"javascript"]) mime = [mime stringByAppendingString:@"; charset=utf-8"];
+    if (([mime hasPrefix:@"text/"] || [mime containsString:@"javascript"]) && ![mime containsString:@"charset"]) {
+        mime = [mime stringByAppendingString:@"; charset=utf-8"];
+    }
     MWResponse *r = [MWResponse data:d type:mime];
     r.headers[@"Cache-Control"] = @"no-cache";
+    r.headers[@"Service-Worker-Allowed"] = @"/";
     return r;
 }
 
@@ -335,7 +573,7 @@ static NSDictionary *MWOpenAPISpec(void) {
         @"info": @{
             @"title": @"meowtxt iMessage REST & SSE API",
             @"version": @"0.2.0",
-            @"description": @"On-device iOS 16 iMessage REST + Server-Sent Events (SSE) API exposed by meowd (dev.sillyangel.meowtxt). Designed for building custom web, Next.js, React, desktop, and AI agent clients.",
+            @"description": @"On-device iOS 16 iMessage REST + Server-Sent Events (SSE) API exposed by meowd (dev.sillyangel.meowtxt). Designed for building custom web, PWA, Chrome Isolated Web App (IWA), Next.js, React, desktop, and AI agent clients.",
         },
         @"components": @{
             @"securitySchemes": @{
@@ -356,6 +594,11 @@ static NSDictionary *MWOpenAPISpec(void) {
             @"/api/search": @{@"get": @{@"summary": @"Search message text across all iMessage conversations"}},
             @"/api/contacts": @{@"get": @{@"summary": @"Search iOS AddressBook contacts and handles"}},
             @"/api/dnd": @{@"get": @{@"summary": @"Query and subscribe to Focus / Do Not Disturb status for a chat"}},
+            @"/api/notifications": @{
+                @"get": @{@"summary": @"Get push/webhook notification preferences (received, sent, delivered, read)"},
+                @"post": @{@"summary": @"Update notification event toggles (received, sent, delivered, read) and webhook URLs"},
+            },
+            @"/api/notifications/test": @{@"post": @{@"summary": @"Emit a test notification event over SSE and registered webhooks"}},
             @"/api/pin": @{@"post": @{@"summary": @"Pin or unpin a conversation (two-way synced with native iOS Messages)"}},
             @"/api/send": @{@"post": @{@"summary": @"Send an iMessage (supports subject, bubble/screen effects, inline replies, and notifyAnyway DND override)"}},
             @"/api/send-file": @{@"post": @{@"summary": @"Upload and send a binary file/photo/video/audio attachment"}},
@@ -365,7 +608,7 @@ static NSDictionary *MWOpenAPISpec(void) {
             @"/api/react": @{@"post": @{@"summary": @"Send or remove a tapback reaction (love, like, dislike, laugh, emphasize, question)"}},
             @"/api/read": @{@"post": @{@"summary": @"Mark a conversation as read"}},
             @"/api/typing": @{@"post": @{@"summary": @"Start or stop outgoing typing indicator"}},
-            @"/api/events": @{@"get": @{@"summary": @"Server-Sent Events stream (hello, message, updated, chat, typing, pinned, dnd)"}},
+            @"/api/events": @{@"get": @{@"summary": @"Server-Sent Events stream (hello, message, updated, chat, typing, pinned, dnd, notification)"}},
         },
     };
 }
@@ -374,6 +617,10 @@ static MWResponse *MWRoute(MWRequest *req) {
     NSString *p = req.path;
     NSString *m = req.method;
     if ([m isEqualToString:@"OPTIONS"]) { MWResponse *r = [MWResponse new]; r.status = 204; r.body = [NSData data]; return r; }
+
+    if (!gEnabled) {
+        return [MWResponse error:@"meowtxt server is disabled in iOS Settings (Settings -> meowtxt)" status:503];
+    }
 
     if ([p isEqualToString:@"/api/openapi.json"] && ([m isEqualToString:@"GET"] || [m isEqualToString:@"HEAD"])) {
         return [MWResponse json:MWOpenAPISpec()];
@@ -390,7 +637,61 @@ static MWResponse *MWRoute(MWRequest *req) {
     NSDictionary *body = post ? ([[req JSONBody] isKindOfClass:NSDictionary.class] ? [req JSONBody] : @{}) : @{};
 
     if (get && [p isEqualToString:@"/api/status"]) {
-        return [MWResponse json:[[MWIMBridge shared] status]];
+        NSMutableDictionary *st = [[[MWIMBridge shared] status] mutableCopy];
+        st[@"enabled"] = @(gEnabled);
+        st[@"requireAuth"] = @(gRequireAuth);
+        return [MWResponse json:st];
+    }
+    if (get && [p isEqualToString:@"/api/notifications"]) {
+        @synchronized (gNotificationEvents) {
+            return [MWResponse json:@{
+                @"ok": @YES,
+                @"events": [gNotificationEvents copy],
+                @"webhooks": [gNotificationWebhooks copy],
+            }];
+        }
+    }
+    if (post && [p isEqualToString:@"/api/notifications"]) {
+        @synchronized (gNotificationEvents) {
+            if ([body[@"events"] isKindOfClass:NSDictionary.class]) {
+                NSDictionary *ev = body[@"events"];
+                for (NSString *k in @[@"received", @"sent", @"delivered", @"read"]) {
+                    if (ev[k] != nil) gNotificationEvents[k] = @([ev[k] boolValue]);
+                }
+            }
+            for (NSString *k in @[@"received", @"sent", @"delivered", @"read"]) {
+                if (body[k] != nil) gNotificationEvents[k] = @([body[k] boolValue]);
+            }
+            if ([body[@"webhooks"] isKindOfClass:NSArray.class]) {
+                [gNotificationWebhooks removeAllObjects];
+                for (id u in body[@"webhooks"]) {
+                    if ([u isKindOfClass:NSString.class] && [u length]) [gNotificationWebhooks addObject:u];
+                }
+            }
+            if ([body[@"addWebhook"] isKindOfClass:NSString.class] && [body[@"addWebhook"] length]) {
+                NSString *u = body[@"addWebhook"];
+                if (![gNotificationWebhooks containsObject:u]) [gNotificationWebhooks addObject:u];
+            }
+            if ([body[@"removeWebhook"] isKindOfClass:NSString.class]) {
+                [gNotificationWebhooks removeObject:body[@"removeWebhook"]];
+            }
+            MWSaveNotificationConfig();
+            return [MWResponse json:@{
+                @"ok": @YES,
+                @"events": [gNotificationEvents copy],
+                @"webhooks": [gNotificationWebhooks copy],
+            }];
+        }
+    }
+    if (post && [p isEqualToString:@"/api/notifications/test"]) {
+        NSString *type = MWStr(body[@"type"]) ?: @"read";
+        NSString *title = MWStr(body[@"title"]) ?: ([type isEqualToString:@"sent"] ? @"Sent via meowtxt" :
+                                                    [type isEqualToString:@"delivered"] ? @"Delivered via meowtxt" :
+                                                    [type isEqualToString:@"received"] ? @"New iMessage" : @"Read by Recipient");
+        NSString *msgBody = MWStr(body[@"body"]) ?: @"Web notifications for sent, delivered & read messages are active!";
+        NSString *chatGUID = MWStr(body[@"chat"]);
+        NSDictionary *payload = MWEmitNotification(type, title, msgBody, chatGUID, nil, nil, YES);
+        return [MWResponse json:@{@"ok": @YES, @"notification": payload}];
     }
     if (get && [p isEqualToString:@"/api/chats"]) {
         NSInteger limit = q[@"limit"] ? MIN(MAX([q[@"limit"] integerValue], 1), 500) : 50;
@@ -469,8 +770,9 @@ static MWResponse *MWRoute(MWRequest *req) {
         if (!path) return [MWResponse error:@"attachment not found" status:404];
         if (![q[@"raw"] isEqualToString:@"1"]) {
             BOOL thumb = [q[@"thumb"] isEqualToString:@"1"];
-            NSString *jpg = MWBrowserFriendlyImage(path, rowid, thumb);
-            if (jpg) return MWServeFile(jpg, @"image/jpeg", req, nil);
+            NSString *transMime = nil;
+            NSString *conv = MWBrowserFriendlyImage(path, rowid, thumb, MWStr(a[@"uti"]), MWStr(a[@"mime"]), &transMime);
+            if (conv) return MWServeFile(conv, transMime ?: @"image/jpeg", req, nil);
         }
         return MWServeFile(path, MWMimeForPath(path, MWStr(a[@"mime"])), req, MWStr(a[@"name"]));
     }
@@ -575,6 +877,11 @@ static MWResponse *MWRoute(MWRequest *req) {
 
 #pragma mark - main
 
+static void MWPrefsNotificationCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    MWLoadConfig();
+    MWLog(@"reloaded preferences via Darwin notification (enabled=%d, requireAuth=%d)", gEnabled, gRequireAuth);
+}
+
 int main(int argc, char *argv[]) {
     @autoreleasepool {
         gSubscribers = [NSMutableSet set];
@@ -582,6 +889,13 @@ int main(int argc, char *argv[]) {
         gToken = cfg[@"token"];
         uint16_t port = (uint16_t)[cfg[@"port"] intValue] ?: kDefaultPort;
         MWLog(@"starting (pid %d, uid %d)", getpid(), getuid());
+
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL,
+                                        MWPrefsNotificationCallback,
+                                        CFSTR("dev.sillyangel.meowtxt/ReloadPrefs"),
+                                        NULL,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
 
         if (![[MWDatabase shared] open]) {
             MWLog(@"cannot open sms.db; exiting");

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bannerBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e17"/>
+      <stop offset="45%" stop-color="#0f1f3d"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34c8ff"/>
+      <stop offset="50%" stop-color="#0a84ff"/>
+      <stop offset="100%" stop-color="#bf5af2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="400" fill="url(#bannerBg)"/>
+
+  <!-- Decorative Grid / Bubbles -->
+  <circle cx="1020" cy="80" r="220" fill="#0a84ff" opacity="0.14"/>
+  <circle cx="180" cy="340" r="190" fill="#5e5ce6" opacity="0.16"/>
+  <circle cx="880" cy="320" r="140" fill="#bf5af2" opacity="0.12"/>
+
+  <!-- App Icon Card on Left -->
+  <g transform="translate(110, 72) scale(0.5)">
+    <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#accentGlow)"/>
+    <path d="M138 190 L152 106 C154 94 168 90 176 99 L232 162 Z" fill="#ffffff"/>
+    <path d="M374 190 L360 106 C358 94 344 90 336 99 L280 162 Z" fill="#ffffff"/>
+    <path d="M256 144 C162 144 92 200 92 272 C92 312 115 347 152 371 C147 394 132 414 116 424 C112 427 114 433 119 433 C153 432 186 416 207 395 C223 398 239 400 256 400 C350 400 420 344 420 272 C420 200 350 144 256 144 Z" fill="#ffffff"/>
+    <circle cx="204" cy="256" r="16" fill="#0f172a"/>
+    <circle cx="308" cy="256" r="16" fill="#0f172a"/>
+    <path d="M246 276 L266 276 L256 289 Z" fill="#0a84ff"/>
+    <path d="M230 296 Q243 310 256 294 Q269 310 282 296" fill="none" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Title & Tagline -->
+  <text x="415" y="175" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="68" font-weight="800" fill="#ffffff" letter-spacing="-1.5">meowtxt</text>
+  <text x="418" y="228" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif" font-size="26" font-weight="500" fill="#93c5fd">On-Device iMessage Web Client, PWA/IWA &amp; REST + SSE API</text>
+
+  <!-- Feature Pills -->
+  <g transform="translate(418, 258)">
+    <rect x="0" y="0" width="160" height="40" rx="20" fill="#0a84ff" fill-opacity="0.22" stroke="#0a84ff" stroke-opacity="0.5"/>
+    <text x="80" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#e0f2fe">iMessage + SSE</text>
+
+    <rect x="176" y="0" width="175" height="40" rx="20" fill="#bf5af2" fill-opacity="0.22" stroke="#bf5af2" stroke-opacity="0.5"/>
+    <text x="263" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#f3e8ff">Focus / DND Sync</text>
+
+    <rect x="367" y="0" width="185" height="40" rx="20" fill="#30d158" fill-opacity="0.2" stroke="#30d158" stroke-opacity="0.5"/>
+    <text x="459" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#dcfce7">Web Notifications</text>
+
+    <rect x="568" y="0" width="155" height="40" rx="20" fill="#5e5ce6" fill-opacity="0.25" stroke="#5e5ce6" stroke-opacity="0.5"/>
+    <text x="645" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#e0e7ff">OpenAPI 3.1</text>
+  </g>
+</svg>

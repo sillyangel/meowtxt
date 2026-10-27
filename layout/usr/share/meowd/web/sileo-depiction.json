@@ -1,0 +1,92 @@
+{
+  "minVersion": "0.4",
+  "headerImage": "http://127.0.0.1:8737/sileo-banner.png",
+  "tintColor": "#0a84ff",
+  "class": "DepictionTabView",
+  "tabs": [
+    {
+      "tabname": "Details",
+      "class": "DepictionStackView",
+      "views": [
+        {
+          "class": "DepictionSubheaderView",
+          "title": "On-Device iMessage Web Client, PWA/IWA & REST + SSE API",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "**meowtxt** (`dev.sillyangel.meowtxt`) runs a lightweight rootless daemon (`meowd`) on your iPhone (port **8737**) that bridges `IMCore`, `imagent`, `StatusKit`, `sms.db`, and `AddressBook` to a fast, modern web app, Progressive Web App (PWA), Chrome Isolated Web App (IWA), and full CORS REST + Server-Sent Events (SSE) API.\n\n### Highlights\n- **Real-Time iMessage Sync:** Instant incoming/outgoing messages, tapbacks, inline replies, bubble/screen effects, iOS 16 Edit & Unsend, and live typing bubbles.\n- **Web Push & Browser Notifications:** Real-time desktop/mobile notifications when messages are **received**, **sent**, **delivered**, or **read**, plus webhook forwarding.\n- **Focus / Do Not Disturb Sync:** Live recipient Focus/DND banner (`StatusKit`) + manual **Notify Anyway** override (`POST /api/notify`).\n- **Two-Way Pinned Chats & Contact Avatars:** Syncs pinned conversations directly with native iOS Messages (`IMPinnedConversationsController`) and streams contact photos & HEIC thumbnails.\n- **Next.js / React / AI Ready:** Includes an OpenAPI 3.1 spec (`/api/openapi.json`), full CORS headers, and Cross-Origin Isolation headers for Chrome Isolated Web Apps."
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionHeaderView",
+          "title": "Quick Links (On-Device)"
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "Open meowtxt Web Client (localhost:8737)",
+          "action": "http://127.0.0.1:8737",
+          "openExternal": true
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "View OpenAPI 3.1 Specification",
+          "action": "http://127.0.0.1:8737/api/openapi.json",
+          "openExternal": true
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Package ID",
+          "text": "dev.sillyangel.meowtxt"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Daemon Binary",
+          "text": "/var/jb/usr/bin/meowd"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Default Port",
+          "text": "8737 (HTTP + SSE)"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Token Plist",
+          "text": "/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist"
+        }
+      ]
+    },
+    {
+      "tabname": "Changelog",
+      "class": "DepictionStackView",
+      "views": [
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Version 0.2.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "- Added real-time Web Notifications (`event: notification` SSE + Service Worker + `/api/notifications` & `/api/notifications/test`) when messages are **received**, **sent**, **delivered**, or **read**.\n- Added custom SVG/PNG icons, `manifest.webmanifest`, `/.well-known/manifest.webmanifest`, and Service Worker (`sw.js`) for full PWA & Chrome Isolated Web App (IWA) support.\n- Added Focus / Do Not Disturb (`StatusKit`) header banner and manual **Notify Anyway** override (`POST /api/notify`).\n- Added iOS 16 Edit (`POST /api/edit`), Unsend (`POST /api/unsend`), and OpenAPI 3.1 (`GET /api/openapi.json`).\n- Added Sileo icon, banner, and native depiction metadata."
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Version 0.1.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "- Initial release of `meowd` and the built-in web client with two-way synced pinned chats, contact avatars, HEIC transcoding, and live typing indicators."
+        }
+      ]
+    }
+  ]
+}

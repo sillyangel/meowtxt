@@ -3,14 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#161920">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="meowtxt">
   <title>meowtxt — iMessage</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/style.css">
+  <link rel="modulepreload" href="/app.js">
+  <link rel="modulepreload" href="/modules/state.js">
+  <link rel="modulepreload" href="/modules/utils.js">
+  <link rel="modulepreload" href="/modules/api.js">
+  <link rel="modulepreload" href="/modules/ui.js">
 </head>
 <body>
+  <!-- Floating Live Notification Toasts -->
+  <div id="toast-container" class="toast-container"></div>
+
   <!-- Auth Overlay -->
   <div id="auth-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-icon">💬</div>
+      <img src="/icon.svg" alt="meowtxt" class="modal-logo">
       <h2>meowtxt</h2>
       <p>Enter the access token from your iPhone to connect.</p>
       <code class="token-hint">/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist</code>
@@ -34,10 +50,14 @@
       <header class="sidebar-header">
         <div class="header-top">
           <div class="brand">
+            <img src="/favicon.svg" alt="" class="brand-logo">
             <span class="status-dot" id="conn-dot" title="Connecting…"></span>
             <h1>meowtxt</h1>
           </div>
           <div class="header-actions">
+            <button id="notif-btn" class="icon-btn" title="Web Notifications">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </button>
             <button id="new-chat-btn" class="icon-btn" title="New iMessage">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </button>
@@ -167,6 +187,25 @@
         <button id="info-close" class="icon-btn">✕</button>
       </div>
       <div id="status-details" class="status-details"></div>
+      <div class="notif-settings">
+        <div class="notif-settings-header">
+          <div>
+            <h3>Web &amp; Push Notifications</h3>
+            <p class="notif-sub" id="notif-perm-status">Push notifications for incoming, sent, delivered, and read messages.</p>
+          </div>
+          <div class="notif-header-btns">
+            <button id="enable-browser-notif-btn" class="btn-secondary" type="button">Enable Browser Push</button>
+            <button id="test-notif-btn" class="btn-secondary" type="button">Test Notification 🔔</button>
+          </div>
+        </div>
+        <div class="notif-toggles">
+          <label class="notif-toggle-item"><input type="checkbox" id="notif-opt-received" checked> Incoming Messages</label>
+          <label class="notif-toggle-item"><input type="checkbox" id="notif-opt-sent" checked> Message Sent</label>
+          <label class="notif-toggle-item"><input type="checkbox" id="notif-opt-delivered" checked> Message Delivered</label>
+          <label class="notif-toggle-item"><input type="checkbox" id="notif-opt-read" checked> Message Read</label>
+          <label class="notif-toggle-item"><input type="checkbox" id="notif-opt-foreground" checked> Show Banner While Focused</label>
+        </div>
+      </div>
       <div class="api-docs">
         <h3>REST API Quick Reference</h3>
         <pre id="api-examples"></pre>
@@ -177,6 +216,6 @@
     </div>
   </div>
 
-  <script src="/app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

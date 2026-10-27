@@ -1,11 +1,15 @@
 Package: dev.sillyangel.meowtxt
 Name: meowtxt
-Version: 0.1.0
+Version: 0.2.0
 Architecture: iphoneos-arm64
-Description: Use this iPhone's iMessage from a web browser or a REST API hosted on the phone.
-Maintainer: angel
-Author: angel
-Section: Tweaks
+Description: On-device iMessage web client, PWA/IWA, and REST + SSE API with real-time notifications, Focus/DND override, two-way pinned chats, and contact avatars.
+Maintainer: angel <angel@sillyangel.fyi>
+Author: angel <angel@sillyangel.fyi>
+Section: Networking
 Depends: firmware (>= 15.0)
 Replaces: com.meow.meowd
 Conflicts: com.meow.meowd
+Homepage: https://github.com/sillyangel/meowtxt
+Icon: file:///var/jb/usr/share/meowd/sileo/icon.png
+Header: http://127.0.0.1:8737/sileo-banner.png
+SileoDepiction: http://127.0.0.1:8737/sileo-depiction.json

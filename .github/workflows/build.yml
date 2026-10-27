@@ -1,4 +1,4 @@
-name: Build meowtxt
+name: Build & Publish meowtxt
 
 on:
   push:
@@ -62,3 +62,106 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Publish to sileo.sillyangel.dev (via hackclub.app IPv4 Proxy)
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository (for Sileo assets)
+        uses: actions/checkout@v4
+
+      - name: Download Debian package
+        uses: actions/download-artifact@v4
+        with:
+          name: meowtxt-rootless
+          path: packages/
+
+      - name: Deploy to hel1.sillyangel.dev via angel@hackclub.app IPv4 proxy
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          PROXY_HOST: hackclub.app
+          PROXY_USER: angel
+          TARGET_HOST: hel1.sillyangel.dev
+          TARGET_USER: root
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
+            echo "::notice::DEPLOY_SSH_KEY secret is not configured yet. Add the public key to angel@hackclub.app and root@hel1.sillyangel.dev and set DEPLOY_SSH_KEY in GitHub Secrets to enable automatic Sileo publishing."
+            exit 0
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          cat > ~/.ssh/config <<EOF
+          Host hackclub-proxy
+              HostName ${PROXY_HOST}
+              User ${PROXY_USER}
+              IdentityFile ~/.ssh/deploy_key
+              StrictHostKeyChecking no
+              UserKnownHostsFile /dev/null
+
+          Host hel1
+              HostName ${TARGET_HOST}
+              User ${TARGET_USER}
+              ProxyJump hackclub-proxy
+              IdentityFile ~/.ssh/deploy_key
+              StrictHostKeyChecking no
+              UserKnownHostsFile /dev/null
+          EOF
+          chmod 600 ~/.ssh/config
+
+          DEB_FILE=$(ls packages/*.deb | head -1)
+          VERSION=$(dpkg-deb -f "$DEB_FILE" Version)
+          echo "Deploying dev.sillyangel.meowtxt v${VERSION} (${DEB_FILE})..."
+
+          # Try ProxyJump to root@hel1.sillyangel.dev first; fall back to direct hackclub-proxy port-forward
+          REMOTE="hel1"
+          if ! ssh -o ConnectTimeout=10 hel1 "true" 2>/dev/null; then
+            REMOTE="hackclub-proxy"
+          fi
+
+          ssh "$REMOTE" "sudo mkdir -p /var/www/sileo/Packages/meowtxt/silica_data"
+          scp "$DEB_FILE" "${REMOTE}:/tmp/meowtxt.deb"
+          scp layout/usr/share/meowd/sileo/icon.png "${REMOTE}:/tmp/meowtxt-icon.png"
+          scp layout/usr/share/meowd/web/sileo-banner.png "${REMOTE}:/tmp/meowtxt-banner.png"
+
+          ssh "$REMOTE" "sudo bash -c '
+            set -euo pipefail
+            mv /tmp/meowtxt.deb /var/www/sileo/Packages/meowtxt/tweak.deb
+            mv /tmp/meowtxt-icon.png /var/www/sileo/Packages/meowtxt/silica_data/icon.png
+            mv /tmp/meowtxt-banner.png /var/www/sileo/Packages/meowtxt/silica_data/banner.png
+            cat > /var/www/sileo/Packages/meowtxt/silica_data/index.json <<JSON
+          {
+            \"bundle_id\": \"dev.sillyangel.meowtxt\",
+            \"name\": \"meowtxt\",
+            \"version\": \"${VERSION}\",
+            \"tagline\": \"On-device iMessage Web, PWA/IWA & REST/SSE API daemon for iOS 15–16\",
+            \"homepage\": \"https://sileo.sillyangel.dev\",
+            \"developer\": { \"name\": \"angel\", \"email\": \"angel@sillyangel.dev\" },
+            \"maintainer\": { \"name\": \"angel\", \"email\": \"angel@sillyangel.dev\" },
+            \"section\": \"Networking\",
+            \"dependencies\": \"firmware (>= 15.0)\",
+            \"works_min\": \"15.0\",
+            \"works_max\": \"16.9\",
+            \"featured\": \"true\",
+            \"source\": \"https://github.com/sillyangel/meowtxt\",
+            \"changelog\": [
+              { \"version\": \"${VERSION}\", \"changes\": \"Modular ES web client, Web/Push notifications (received, sent, delivered, read), HEIC/Sticker hardware transcoding, Focus/DND Notify Anyway, iOS 16 Edit/Unsend, and native Settings PreferenceLoader bundle.\" }
+            ]
+          }
+          JSON
+            if [ -d /var/www/sileo/venv ]; then
+              cd /var/www/sileo && source venv/bin/activate && python3 index.py
+            elif command -v aptly >/dev/null 2>&1; then
+              aptly -config=/etc/aptly.conf repo add tweaks /var/www/sileo/Packages/meowtxt/tweak.deb
+              aptly -config=/etc/aptly.conf publish update -skip-signing stable
+            fi
+          '"
+          echo "Published dev.sillyangel.meowtxt v${VERSION} to https://sileo.sillyangel.dev"

@@ -236,7 +236,11 @@ fail:
     headers[@"Access-Control-Allow-Headers"] = @"Authorization, Content-Type, X-Meow-Token, Accept, Range, Cache-Control";
     headers[@"Access-Control-Allow-Methods"] = @"GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS";
     headers[@"Access-Control-Expose-Headers"] = @"Content-Length, Content-Range, Content-Type";
+    headers[@"Access-Control-Allow-Private-Network"] = @"true";
     headers[@"Access-Control-Max-Age"] = @"86400";
+    headers[@"Cross-Origin-Resource-Policy"] = @"cross-origin";
+    headers[@"Cross-Origin-Opener-Policy"] = @"same-origin";
+    headers[@"Cross-Origin-Embedder-Policy"] = @"credentialless";
     if (res.stream) {
         headers[@"Cache-Control"] = @"no-cache";
         headers[@"Connection"] = @"keep-alive";

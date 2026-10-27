@@ -6,8 +6,35 @@
 	<true/>
 	<key>com.apple.private.security.no-container</key>
 	<true/>
+	<key>com.apple.private.security.no-sandbox</key>
+	<true/>
 	<key>com.apple.private.skip-library-validation</key>
 	<true/>
+	<!-- Hardware HEIC / HEIF / AppleJPEG / IOSurface decoding for ImageIO -->
+	<key>com.apple.security.exception.iokit-user-client-class</key>
+	<array>
+		<string>AppleAVE2UserClient</string>
+		<string>IOSurfaceRootUserClient</string>
+		<string>AppleJPEGDriverUserClient</string>
+		<string>AGXDeviceUserClient</string>
+		<string>IOAccelDevice2</string>
+		<string>IOAccelContext2</string>
+		<string>IOAccelSharedUserClient2</string>
+		<string>RootDomainUserClient</string>
+	</array>
+	<key>com.apple.imageio.allowabletypes</key>
+	<array>
+		<string>public.avci</string>
+		<string>public.heic</string>
+		<string>public.heics</string>
+		<string>public.heif</string>
+		<string>public.jpeg</string>
+		<string>public.png</string>
+		<string>public.tiff</string>
+		<string>com.compuserve.gif</string>
+		<string>org.webmproject.webp</string>
+		<string>com.microsoft.bmp</string>
+	</array>
 	<!-- imagent client (IMCore) -->
 	<key>com.apple.imagent</key>
 	<true/>

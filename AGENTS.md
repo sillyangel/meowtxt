@@ -13,12 +13,14 @@
 | **Package ID / Name** | `dev.sillyangel.meowtxt` (`meowtxt`) |
 | **Daemon binary** | `/var/jb/usr/bin/meowd` (runs as user `mobile`, UID `501`) |
 | **LaunchDaemon plist** | `/var/jb/Library/LaunchDaemons/dev.sillyangel.meowtxt.plist` |
-| **Web static root** | `/var/jb/usr/share/meowd/web/` (`index.html`, `style.css`, `app.js`) |
-| **Config & token plist** | `/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist` |
+| **Web static root** | `/var/jb/usr/share/meowd/web/` (`index.html`, `style.css`, `app.js`, `sw.js`, `manifest.webmanifest`, `modules/*.js`) |
+| **PreferenceLoader & Bundle** | `/var/jb/Library/PreferenceLoader/Preferences/meowtxtPrefs.plist` & `/var/jb/Library/PreferenceBundles/meowtxtPrefs.bundle` |
+| **Config & token plist** | `/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist` (`enabled`, `token`, `port`, `notifReceived`, `notifSent`, `notifDelivered`, `notifRead`) |
 | **Daemon log** | `/var/mobile/Library/Logs/meowd.log` |
-| **JPEG transcode cache** | `/var/mobile/Library/Caches/meowd/<attachment_rowid>[_thumb].jpg` |
+| **JPEG/PNG transcode cache** | `/var/mobile/Library/Caches/meowd/v2_<attachment_rowid>[_thumb].{jpg,png}` |
 | **Default port** | `8737` (dual-stack IPv4/IPv6) |
 | **OpenAPI 3.1 spec** | `http://<iphone-ip>:8737/api/openapi.json` |
+| **Documentation folder** | `documentation/` (`REST-API.md`, `Web-Notifications.md`, `Client-SDK-NextJS.md`, `Isolated-Web-Apps-IWA.md`, `IMCore-Internals.md`) |
 | **SSH aliases on dev box** | `ssh iphone` (`mobile@10.0.127.243`), `ssh iphone-root` (`root@10.0.127.243`) |
 | **Theos path** | `/drives/storage/Projects/tweak-development/theos` |
 
@@ -384,6 +386,14 @@ Sends or removes a tapback reaction on a message (`love`, `like`, `dislike`, `la
 
 ---
 
+### `GET /api/notifications`, `POST /api/notifications` & `POST /api/notifications/test`
+Configures and tests real-time web/push/webhook notifications for `received`, `sent`, `delivered`, and `read` iMessage events:
+- `GET /api/notifications`: returns `{ ok: true, events: { received, sent, delivered, read }, webhooks: string[] }`.
+- `POST /api/notifications`: `{ "events": { "received": true, "sent": true, "delivered": true, "read": true }, "addWebhook": "https://..." }`.
+- `POST /api/notifications/test`: `{ "type": "read", "title": "Read by cielo", "body": "..." }` — emits a test `event: notification` over SSE and webhooks.
+
+---
+
 ### `GET /api/events` (Server-Sent Events)
 Long-lived `text/event-stream` connection that pushes real-time updates whenever `sms.db`, `imagent`, or `StatusKit` state changes.
 
@@ -396,6 +406,7 @@ Long-lived `text/event-stream` connection that pushes real-time updates whenever
 | `typing` | `{ chat: string, sender: string \| null, name: string \| null, typing: boolean }` | Live incoming typing indicator started or stopped |
 | `pinned` | `{ pinnedIdentifiers: string[] }` | Pinned chats changed on the iPhone or via API |
 | `dnd` | `{ handle: string, chat: string, dnd: boolean }` | Recipient's Focus / Do Not Disturb status changed |
+| `notification` | `{ id: string, type: 'received'\|'sent'\|'delivered'\|'read', title: string, body: string, chat: string\|null, avatarUrl: string\|null, icon: string, tag: string, message: MeowMessage\|null, timestamp: number }` | Web notification emitted when a message is received, sent, delivered, or read |
 
 ---
 
