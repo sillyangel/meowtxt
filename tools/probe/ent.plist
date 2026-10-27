@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>platform-application</key><true/>
+<key>com.apple.private.security.no-container</key><true/>
+<key>com.apple.imagent.chat</key><true/>
+<key>com.apple.imagent</key><true/>
+<key>com.apple.private.imcore.imagent</key><true/>
+<key>com.apple.private.imcore.imdpersistence.database-access</key><true/>
+<key>com.apple.private.imcore.spi.database-access</key><true/>
+<key>com.apple.private.security.storage.Messages</key><true/>
+<key>com.apple.private.ids.messaging</key><array><string>com.apple.madrid</string><string>com.apple.private.alloy.sms</string></array>
+<key>com.apple.private.tcc.allow</key><array><string>kTCCServiceAddressBook</string></array>
+<key>com.apple.Contacts.database-allow</key><true/>
+</dict></plist>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>platform-application</key>
+	<true/>
+	<key>com.apple.private.security.no-container</key>
+	<true/>
+	<key>com.apple.private.skip-library-validation</key>
+	<true/>
+	<!-- imagent client (IMCore) -->
+	<key>com.apple.imagent</key>
+	<true/>
+	<key>com.apple.imagent.chat</key>
+	<true/>
+	<key>com.apple.private.imcore.imagent</key>
+	<true/>
+	<key>com.apple.private.imcore.imdpersistence.database-access</key>
+	<true/>
+	<key>com.apple.private.imcore.spi.database-access</key>
+	<true/>
+	<key>com.apple.private.imcore.imtranscoderservice</key>
+	<true/>
+	<key>com.apple.private.ids.messaging</key>
+	<array>
+		<string>com.apple.madrid</string>
+		<string>com.apple.private.alloy.sms</string>
+	</array>
+	<!-- Focus / Do Not Disturb (StatusKit) -->
+	<key>com.apple.StatusKit.publish.types</key>
+	<array>
+		<string>com.apple.availability</string>
+		<string>com.apple.focus.status</string>
+	</array>
+	<key>com.apple.StatusKit.subscribe.types</key>
+	<array>
+		<string>com.apple.availability</string>
+		<string>com.apple.focus.status</string>
+	</array>
+	<!-- iMessage Pinned Conversations sync -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>com.apple.messages.pinning</string>
+	<key>com.apple.private.ignore-preferences-size-limits</key>
+	<true/>
+	<!-- read sms.db / attachments / address book -->
+	<key>com.apple.private.security.storage.Messages</key>
+	<true/>
+	<key>com.apple.private.security.storage.MessagesMetaData</key>
+	<true/>
+	<key>com.apple.private.security.storage.AddressBook</key>
+	<true/>
+	<key>com.apple.Contacts.database-allow</key>
+	<true/>
+	<key>com.apple.private.tcc.allow</key>
+	<array>
+		<string>kTCCServiceAddressBook</string>
+	</array>
+</dict>
+</plist>

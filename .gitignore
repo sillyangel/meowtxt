@@ -1,0 +1,19 @@
+# Theos build artifacts & packages
+.theos/
+**/.theos/
+packages/
+**/packages/
+*.deb
+
+# macOS / Xcode / Linux editor files
+.DS_Store
+/.build
+/Packages
+/*.xcodeproj
+xcuserdata/
+*.swp
+*~
+
+# Local environment files
+.env
+.env.*

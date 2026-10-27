@@ -1,0 +1,64 @@
+name: Build meowtxt
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Rootless .deb (iOS arm64)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bash curl git perl make \
+            fakeroot rsync zip unzip \
+            libxml2-utils zstd dpkg
+
+      - name: Install Theos
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+        env:
+          THEOS: ${{ runner.temp }}/theos
+
+      - name: Build rootless package
+        run: |
+          make clean
+          make package THEOS_PACKAGE_SCHEME=rootless TARGET=iphone:clang:latest:15.0 FINALPACKAGE=1
+          ls -la packages/
+          dpkg-deb -I packages/*.deb
+          dpkg-deb -c packages/*.deb
+        env:
+          THEOS: ${{ runner.temp }}/theos
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: meowtxt-rootless
+          path: packages/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*.deb
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

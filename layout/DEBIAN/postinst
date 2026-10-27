@@ -1,0 +1,18 @@
+#!/var/jb/bin/sh
+OLD_PLIST=/var/jb/Library/LaunchDaemons/com.meow.meowd.plist
+if [ -f "$OLD_PLIST" ]; then
+    launchctl unload "$OLD_PLIST" 2>/dev/null
+    rm -f "$OLD_PLIST"
+fi
+if [ -f /var/mobile/Library/Preferences/com.meow.meowd.plist ] && [ ! -f /var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist ]; then
+    mv /var/mobile/Library/Preferences/com.meow.meowd.plist /var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist
+    chown mobile:mobile /var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist
+fi
+PLIST=/var/jb/Library/LaunchDaemons/dev.sillyangel.meowtxt.plist
+chown root:wheel "$PLIST"
+chmod 644 "$PLIST"
+launchctl unload "$PLIST" 2>/dev/null
+launchctl load "$PLIST"
+echo "meowtxt: daemon started. Web UI on http://<iphone-ip>:8737"
+echo "meowtxt: access token is in /var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist (key: token)"
+exit 0

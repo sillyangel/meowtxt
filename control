@@ -1,0 +1,11 @@
+Package: dev.sillyangel.meowtxt
+Name: meowtxt
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: Use this iPhone's iMessage from a web browser or a REST API hosted on the phone.
+Maintainer: angel
+Author: angel
+Section: Tweaks
+Depends: firmware (>= 15.0)
+Replaces: com.meow.meowd
+Conflicts: com.meow.meowd

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>meowtxt — iMessage</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Auth Overlay -->
+  <div id="auth-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-icon">💬</div>
+      <h2>meowtxt</h2>
+      <p>Enter the access token from your iPhone to connect.</p>
+      <code class="token-hint">/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist</code>
+      <form id="auth-form">
+        <input type="password" id="token-input" placeholder="Access Token" autocomplete="off" required>
+        <button type="submit" class="btn-primary">Connect</button>
+      </form>
+      <div id="auth-error" class="error-text hidden"></div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="modal hidden">
+    <button id="lightbox-close" class="lightbox-close" title="Close">✕</button>
+    <img id="lightbox-img" src="" alt="Attachment">
+  </div>
+
+  <div id="app" class="app-layout">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <header class="sidebar-header">
+        <div class="header-top">
+          <div class="brand">
+            <span class="status-dot" id="conn-dot" title="Connecting…"></span>
+            <h1>meowtxt</h1>
+          </div>
+          <div class="header-actions">
+            <button id="new-chat-btn" class="icon-btn" title="New iMessage">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button id="settings-btn" class="icon-btn" title="Connection & Account">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="account-pill" id="account-pill">iMessage</div>
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="search-input" placeholder="Search conversations or messages…">
+          <button id="search-clear" class="search-clear hidden">✕</button>
+        </div>
+      </header>
+      <div id="pinned-section" class="pinned-section hidden"></div>
+      <div id="chat-list" class="chat-list"></div>
+    </aside>
+
+    <!-- Main Conversation Pane -->
+    <main id="main-pane" class="main-pane">
+      <header id="chat-header" class="chat-header">
+        <button id="back-btn" class="icon-btn mobile-only" title="Back">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chat-header-info" class="chat-header-info">
+          <div class="chat-avatar" id="header-avatar">💬</div>
+          <div class="chat-meta">
+            <div class="chat-title" id="header-title">Select a conversation</div>
+            <div class="chat-subtitle" id="header-subtitle">iMessage</div>
+          </div>
+        </div>
+        <button id="pin-chat-btn" class="icon-btn pin-header-btn hidden" title="Pin / Unpin Conversation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+        </button>
+        <div id="new-recipient-bar" class="new-recipient-bar hidden">
+          <span class="to-label">To:</span>
+          <input type="text" id="recipient-input" placeholder="Email or iMessage handle (comma-separated for group)…" autocomplete="off">
+          <div id="contact-suggestions" class="contact-suggestions hidden"></div>
+        </div>
+      </header>
+
+      <!-- Focus / Do Not Disturb Header Banner -->
+      <div id="dnd-banner" class="dnd-banner hidden">
+        <div class="dnd-banner-main">
+          <span class="dnd-moon">🌙</span>
+          <span id="dnd-banner-text"> has notifications silenced</span>
+        </div>
+        <button id="dnd-banner-action" class="dnd-override-btn" type="button">Notify Anyway 🔔</button>
+      </div>
+
+      <div id="messages-container" class="messages-container">
+        <div id="load-more-wrap" class="load-more-wrap hidden">
+          <button id="load-more-btn" class="btn-secondary">Load earlier messages</button>
+        </div>
+        <div id="messages-list" class="messages-list">
+          <div class="empty-state">Choose a conversation on the left or start a new iMessage.</div>
+        </div>
+        <div id="typing-indicator-row" class="typing-indicator-row hidden">
+          <div class="typing-bubble">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+          <span id="typing-indicator-label" class="typing-label"></span>
+        </div>
+      </div>
+
+      <!-- Reply / Attachment Preview Bar -->
+      <div id="composer-bars" class="composer-bars">
+        <div id="reply-bar" class="preview-bar hidden">
+          <div class="preview-bar-content">
+            <span class="preview-label">Replying to</span>
+            <span id="reply-bar-text" class="preview-text"></span>
+          </div>
+          <button id="reply-cancel" class="icon-btn">✕</button>
+        </div>
+        <div id="attachment-bar" class="preview-bar hidden">
+          <div class="preview-bar-content">
+            <span class="preview-label">Attachment:</span>
+            <span id="attachment-name" class="preview-text"></span>
+          </div>
+          <button id="attachment-cancel" class="icon-btn">✕</button>
+        </div>
+      </div>
+
+      <!-- Composer -->
+      <footer id="composer" class="composer">
+        <input type="file" id="file-input" class="hidden">
+        <button id="attach-btn" class="icon-btn attach-btn" title="Attach photo or file">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="composer-input-wrap">
+          <textarea id="message-input" rows="1" placeholder="iMessage"></textarea>
+          <select id="effect-select" class="effect-select" title="Send with effect">
+            <option value="">Effect: None</option>
+            <optgroup label="Bubble">
+              <option value="slam">Slam</option>
+              <option value="loud">Loud</option>
+              <option value="gentle">Gentle</option>
+              <option value="invisible">Invisible Ink</option>
+            </optgroup>
+            <optgroup label="Screen">
+              <option value="confetti">Confetti</option>
+              <option value="echo">Echo</option>
+              <option value="spotlight">Spotlight</option>
+              <option value="balloons">Balloons</option>
+              <option value="love">Heart</option>
+              <option value="lasers">Lasers</option>
+              <option value="fireworks">Fireworks</option>
+              <option value="celebration">Celebration</option>
+            </optgroup>
+          </select>
+        </div>
+        <button id="send-btn" class="send-btn" title="Send (Enter)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Info / API Modal -->
+  <div id="info-modal" class="modal hidden">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h2>meowtxt Status & API</h2>
+        <button id="info-close" class="icon-btn">✕</button>
+      </div>
+      <div id="status-details" class="status-details"></div>
+      <div class="api-docs">
+        <h3>REST API Quick Reference</h3>
+        <pre id="api-examples"></pre>
+      </div>
+      <div class="modal-footer">
+        <button id="logout-btn" class="btn-danger">Change Token</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
