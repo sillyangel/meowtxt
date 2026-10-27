@@ -86,10 +86,8 @@ jobs:
       - name: Deploy to hel1.sillyangel.dev via angel@hackclub.app IPv4 proxy
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          PROXY_HOST: hackclub.app
-          PROXY_USER: angel
-          TARGET_HOST: hel1.sillyangel.dev
-          TARGET_USER: root
+          DEPLOY_HOST: hackclub.app
+          DEPLOY_USER: angel
         run: |
           set -euo pipefail
 
@@ -104,26 +102,9 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
 
           cat > ~/.ssh/config <<EOF
-          Host hackclub-root
-              HostName ${PROXY_HOST}
-              User root
-              IdentityFile ~/.ssh/deploy_key
-              StrictHostKeyChecking no
-              UserKnownHostsFile /dev/null
-              LogLevel ERROR
-
           Host hackclub-proxy
-              HostName ${PROXY_HOST}
-              User ${PROXY_USER}
-              IdentityFile ~/.ssh/deploy_key
-              StrictHostKeyChecking no
-              UserKnownHostsFile /dev/null
-              LogLevel ERROR
-
-          Host hel1
-              HostName ${TARGET_HOST}
-              User ${TARGET_USER}
-              ProxyJump hackclub-proxy
+              HostName ${DEPLOY_HOST}
+              User ${DEPLOY_USER}
               IdentityFile ~/.ssh/deploy_key
               StrictHostKeyChecking no
               UserKnownHostsFile /dev/null
@@ -142,12 +123,13 @@ jobs:
               "bundle_id": "dev.sillyangel.meowtxt",
               "name": "meowtxt",
               "version": version,
-              "tagline": "On-device iMessage Web, PWA/IWA & REST/SSE API daemon for iOS 15–16",
-              "homepage": "https://sileo.sillyangel.dev",
+              "tagline": "On-device iMessage Web, PWA/IWA & REST/SSE API daemon for iOS 15-16",
+              "homepage": "https://github.com/sillyangel/meowtxt",
               "developer": {"name": "angel", "email": "angel@sillyangel.dev"},
               "maintainer": {"name": "angel", "email": "angel@sillyangel.dev"},
               "section": "Networking",
               "dependencies": "firmware (>= 15.0), preferenceloader (>= 2.2.3)",
+              "provides": "",
               "works_min": "15.0",
               "works_max": "16.9",
               "featured": "true",
@@ -163,49 +145,43 @@ jobs:
               json.dump(index_data, f, indent=2)
           with open("/tmp/meowtxt-description.md", "w") as f:
               f.write(
-                  "**meowtxt** (dev.sillyangel.meowtxt) is an on-device iMessage Web, PWA / Chrome Isolated Web App (IWA), "
+                  "meowtxt (dev.sillyangel.meowtxt) is an on-device iMessage Web, PWA / Chrome Isolated Web App (IWA), "
                   "and REST + Server-Sent Events (SSE) API daemon for rootless iOS 15-16 (meowd on port 8737).\n\n"
-                  "- **Real-Time Web Client**: Modular ES-module web UI with two-way synced pinned conversations, contact avatars, live typing indicators, tapbacks, inline replies, and bubble/screen effects.\n"
-                  "- **Web, Push & Webhook Notifications**: Live alerts when iMessages are received, sent, delivered, or read.\n"
-                  "- **Focus / DND & Notify Anyway**: Detects Focus / Do Not Disturb status via StatusKit and supports manual Notify Anyway breakthrough (POST /api/notify).\n"
-                  "- **Hardware HEIC & Sticker Conversion**: Automatically transcodes .heic/.heif photos to JPEG and stickers to PNG on-device.\n"
-                  "- **Native iOS Settings**: Toggle the server on/off and view or copy your access token in Settings -> meowtxt.\n"
+                  "- Real-Time Web Client: Modular ES-module web UI with two-way synced pinned conversations, contact avatars, live typing indicators, tapbacks, inline replies, and bubble/screen effects.\n"
+                  "- Web, Push & Webhook Notifications: Live alerts when iMessages are received, sent, delivered, or read.\n"
+                  "- Focus / DND & Notify Anyway: Detects Focus / Do Not Disturb status via StatusKit and supports manual Notify Anyway breakthrough (POST /api/notify).\n"
+                  "- Hardware HEIC & Sticker Conversion: Automatically transcodes .heic/.heif photos to JPEG and stickers to PNG on-device.\n"
+                  "- Native iOS Settings: Toggle the server on/off and view or copy your access token in Settings -> meowtxt.\n"
               )
+          with open("/tmp/deploy-meowtxt.sh", "w") as f:
+              f.write("\n".join([
+                  "#!/usr/bin/env bash",
+                  "set -euo pipefail",
+                  "mkdir -p /var/www/sileo/Packages/meowtxt/silica_data/screenshots /var/www/sileo/Packages/meowtxt/silica_data/scripts",
+                  "mv /tmp/meowtxt.deb /var/www/sileo/Packages/meowtxt/tweak.deb",
+                  "mv /tmp/meowtxt-icon.png /var/www/sileo/Packages/meowtxt/silica_data/icon.png",
+                  "mv /tmp/meowtxt-banner.png /var/www/sileo/Packages/meowtxt/silica_data/banner.png",
+                  "mv /tmp/meowtxt-index.json /var/www/sileo/Packages/meowtxt/silica_data/index.json",
+                  "mv /tmp/meowtxt-description.md /var/www/sileo/Packages/meowtxt/silica_data/description.md",
+                  "cd /var/www/sileo",
+                  "source venv/bin/activate",
+                  "python3 index.py",
+                  "rm -f /tmp/deploy-meowtxt.sh",
+                  "echo '__MEOWTXT_DEPLOY_OK__'",
+                  "",
+              ]))
           PY
 
-          if ssh -o ConnectTimeout=10 hackclub-root "true" 2>/dev/null; then
-            REMOTE="hackclub-root"
-          elif ssh -o ConnectTimeout=10 hel1 "true" 2>/dev/null; then
-            REMOTE="hel1"
-          else
-            REMOTE="hackclub-proxy"
-          fi
-          echo "Connected via ${REMOTE}"
+          scp "$DEB_FILE" hackclub-proxy:/tmp/meowtxt.deb
+          scp layout/usr/share/meowd/sileo/icon.png hackclub-proxy:/tmp/meowtxt-icon.png
+          scp layout/usr/share/meowd/web/sileo-banner.png hackclub-proxy:/tmp/meowtxt-banner.png
+          scp /tmp/meowtxt-index.json hackclub-proxy:/tmp/meowtxt-index.json
+          scp /tmp/meowtxt-description.md hackclub-proxy:/tmp/meowtxt-description.md
+          scp /tmp/deploy-meowtxt.sh hackclub-proxy:/tmp/deploy-meowtxt.sh
 
-          scp "$DEB_FILE" "${REMOTE}:/tmp/meowtxt.deb"
-          scp layout/usr/share/meowd/sileo/icon.png "${REMOTE}:/tmp/meowtxt-icon.png"
-          scp layout/usr/share/meowd/web/sileo-banner.png "${REMOTE}:/tmp/meowtxt-banner.png"
-          scp /tmp/meowtxt-index.json "${REMOTE}:/tmp/meowtxt-index.json"
-          scp /tmp/meowtxt-description.md "${REMOTE}:/tmp/meowtxt-description.md"
-
-          ssh "$REMOTE" '
-            set -euo pipefail
-            SUDO=""
-            if [ "$(id -u)" -ne 0 ] && sudo -n true 2>/dev/null; then
-              SUDO="sudo -n"
-            fi
-            $SUDO mkdir -p /var/www/sileo/Packages/meowtxt/silica_data
-            $SUDO mv /tmp/meowtxt.deb /var/www/sileo/Packages/meowtxt/tweak.deb
-            $SUDO mv /tmp/meowtxt-icon.png /var/www/sileo/Packages/meowtxt/silica_data/icon.png
-            $SUDO mv /tmp/meowtxt-banner.png /var/www/sileo/Packages/meowtxt/silica_data/banner.png
-            $SUDO mv /tmp/meowtxt-index.json /var/www/sileo/Packages/meowtxt/silica_data/index.json
-            $SUDO mv /tmp/meowtxt-description.md /var/www/sileo/Packages/meowtxt/silica_data/description.md
-            if [ -d /var/www/sileo/venv ]; then
-              $SUDO bash -c "cd /var/www/sileo && source venv/bin/activate && python3 index.py"
-            fi
-            if command -v aptly >/dev/null 2>&1 && [ -f /etc/aptly.conf ]; then
-              $SUDO aptly -config=/etc/aptly.conf repo add tweaks /var/www/sileo/Packages/meowtxt/tweak.deb || true
-              $SUDO aptly -config=/etc/aptly.conf publish update -skip-signing stable || true
-            fi
-          '
+          # hackclub.app SSH proxy logs into fish as root and closes the channel with -1 (exit 255),
+          # so run via bash and verify our completion marker.
+          OUT=$(ssh hackclub-proxy "bash /tmp/deploy-meowtxt.sh" 2>&1 || true)
+          echo "$OUT"
+          echo "$OUT" | grep -q "__MEOWTXT_DEPLOY_OK__"
           echo "Published dev.sillyangel.meowtxt v${VERSION} to https://sileo.sillyangel.dev"
