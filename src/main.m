@@ -505,6 +505,10 @@ static NSString *MWMimeForPath(NSString *path, NSString *fallback) {
     if ([ext isEqualToString:@"svg"]) return @"image/svg+xml";
     if ([ext isEqualToString:@"ico"]) return @"image/x-icon";
     if ([ext isEqualToString:@"json"]) return @"application/json; charset=utf-8";
+    if ([ext isEqualToString:@"otf"]) return @"font/otf";
+    if ([ext isEqualToString:@"ttf"]) return @"font/ttf";
+    if ([ext isEqualToString:@"woff2"]) return @"font/woff2";
+    if ([ext isEqualToString:@"woff"]) return @"font/woff";
     UTType *t = [UTType typeWithFilenameExtension:ext];
     return t.preferredMIMEType ?: @"application/octet-stream";
 }
@@ -648,7 +652,11 @@ static MWResponse *MWStatic(MWRequest *req) {
         MWLog(@"[VIEW] %@ loaded Web Client (/) [%@]", MWClientDesc(req), req.headers[@"user-agent"] ?: @"unknown");
     }
     MWResponse *r = [MWResponse data:d type:mime];
-    r.headers[@"Cache-Control"] = @"no-cache";
+    if ([@[@"otf", @"ttf", @"woff", @"woff2"] containsObject:path.pathExtension.lowercaseString]) {
+        r.headers[@"Cache-Control"] = @"public, max-age=31536000, immutable";
+    } else {
+        r.headers[@"Cache-Control"] = @"no-cache";
+    }
     r.headers[@"Service-Worker-Allowed"] = @"/";
     return r;
 }

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'meowtxt-shell-v3';
+const CACHE_NAME = 'meowtxt-shell-v4';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/style.css',
+  '/SF-Pro-Rounded-Regular.otf',
   '/app.js',
   '/modules/state.js',
   '/modules/utils.js',
