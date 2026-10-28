@@ -1,79 +1,171 @@
-<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
-	<defs>
-		<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-			<stop offset="0%" stop-color="#000510"/>
-			<stop offset="55%" stop-color="#00081c"/>
-			<stop offset="100%" stop-color="#000f38"/>
-		</linearGradient>
-		<radialGradient id="glowGrad" cx="22%" cy="50%" r="48%">
-			<stop offset="0%" stop-color="#001f97" stop-opacity="0.32"/>
-			<stop offset="100%" stop-color="#000510" stop-opacity="0"/>
-		</radialGradient>
-	</defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="45%" stop-color="#060e26"/>
+      <stop offset="100%" stop-color="#0d1538"/>
+    </linearGradient>
 
-	<rect width="1200" height="400" fill="url(#bgGrad)"/>
-	<rect width="1200" height="400" fill="url(#glowGrad)"/>
+    <!-- Radial Glow Behind Icon -->
+    <radialGradient id="iconGlow" cx="19%" cy="50%" r="42%">
+      <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#0284c7" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
 
-	<!-- Subtle background grid accents -->
-	<circle cx="1060" cy="80" r="190" fill="none" stroke="#001f97" stroke-width="2" stroke-opacity="0.18"/>
-	<circle cx="1060" cy="80" r="260" fill="none" stroke="#000251" stroke-width="2" stroke-opacity="0.25"/>
+    <!-- Ambient Right Glow -->
+    <radialGradient id="rightGlow" cx="85%" cy="30%" r="45%">
+      <stop offset="0%" stop-color="#4338ca" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#1d4ed8" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#060e26" stop-opacity="0"/>
+    </radialGradient>
 
-	<!-- Left Icon Card (scaled from user's 800x800 icon.svg) -->
-	<g transform="translate(88, 52) scale(0.37)">
-		<g id="bg">
-			<path fill-rule="evenodd" fill="#000510" d="m172 0h456c94.99 0 172 77.01 172 172v456c0 94.99-77.01 172-172 172h-456c-94.99 0-172-77.01-172-172v-456c0-94.99 77.01-172 172-172z"/>
-			<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-width="6" stroke-opacity="0.45" d="m172 0h456c94.99 0 172 77.01 172 172v456c0 94.99-77.01 172-172 172h-456c-94.99 0-172-77.01-172-172v-456c0-94.99 77.01-172 172-172z"/>
-		</g>
-		<g id="cat copy">
-			<g id="cat things">
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m81 331.63l73.83-12.36"/>
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m95.39 430.29l68.43-34.3"/>
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m719 387.05l-84.96-20.14"/>
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m630.4 311.6c0 0 60.53-9.22 80.96-30.24"/>
-			</g>
-			<g id="body">
-				<g id="body bottom">
-					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m487.86 499.77c0 0 107.99 23.69 140.74-82.67"/>
-					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m540.45 640.46l-22.69-137.47"/>
-					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m253.54 643l35.13-131.07"/>
-					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m305.13 507.02c0 0-101.87 16.29-135.19-59.46"/>
-				</g>
-				<g id="body top">
-					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m184.19 238.94c0 0 72.71-78.73 91.25-71.54 18.54 7.19 68.03 73.06 76.21 80.96 8.18 7.9 101.36-2.63 120.14-14.89 18.78-12.26 79.93-79.45 89.39-76.37 9.45 3.09 72.21 102.71 72.21 102.71"/>
-				</g>
-			</g>
-			<g id="mouth">
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m316.26 412.53c0 0 27.57-8.95 34.43-7.74 6.85 1.21 36.72 11.34 46.84 10.74 10.13-0.61 59.6-10.13 65.35-8.92"/>
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m354.29 416.62c0 0 4.55 26.85 5.61 29.09 1.06 2.24 18.99 28.63 38.84 26.64 19.84-2 41.49-11.23 48.2-57.38"/>
-			</g>
-			<g id="Eyes">
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="13.5" d="m464.98 372.38l73.45-56.04 55.3 66.94z"/>
-				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="13.5" d="m214.65 397.23l36.19-70.93 59.76 49.36z"/>
-			</g>
-			<g id="Glasses">
-				<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m172.22 295.6c0 0-8.15 81.82 2.15 99.3 10.29 17.49 52.2 41.34 52.2 41.34 0 0 65.82 4.38 75.77 0.43 9.95-3.95 37.34-29.26 41.96-35.55 4.63-6.29 7.92-77.39 7.92-77.39 0 0-10.71-34.26-51.57-32.97-40.85 1.29-51.93-5.67-128.43 4.84z"/>
-				<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m355.56 325.05l82.55-0.86"/>
-				<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m438.49 333.5c0 0 1.2 80.71 25.32 98.19 24.12 17.48 95.6 13.08 107.19 10.64 11.59-2.43 28.36-15.76 31.67-33.31 7.66-17.31 17.12-48.63 17.12-53.54 0-4.91 1.26-59.47-13.72-67.83-15.22-0.84-123.55-9.1-150.3 0.26-8.72 9.11-17.79 9.79-17.28 45.59z"/>
-			</g>
-		</g>
-	</g>
+    <!-- Ambient Bottom Glow -->
+    <radialGradient id="bottomGlow" cx="55%" cy="85%" r="40%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.22"/>
+      <stop offset="75%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
 
-	<!-- Typography -->
-	<text x="430" y="175" font-family="Inter, Helvetica, Arial, sans-serif" font-size="78" font-weight="800" fill="#eef3ff">meowtxt</text>
-	<text x="434" y="226" font-family="Inter, Helvetica, Arial, sans-serif" font-size="25" font-weight="500" fill="#7aa2f7">iMessage Web, PWA / IWA &amp; REST + SSE API Daemon</text>
+    <!-- Icon Card Glass Border -->
+    <linearGradient id="glassBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.75"/>
+      <stop offset="50%" stop-color="#2563eb" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#001f97" stop-opacity="0.75"/>
+    </linearGradient>
+  </defs>
 
-	<!-- Feature Badges -->
-	<g transform="translate(434, 258)">
-		<rect x="0" y="0" width="166" height="40" rx="20" fill="#001f97" fill-opacity="0.32" stroke="#001f97" stroke-width="1.5"/>
-		<text x="83" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#c8dbff">Rootless iOS 15–16</text>
+  <!-- 1. Background Layers -->
+  <rect width="1200" height="400" fill="url(#bgGrad)"/>
+  <rect width="1200" height="400" fill="url(#iconGlow)"/>
+  <rect width="1200" height="400" fill="url(#rightGlow)"/>
+  <rect width="1200" height="400" fill="url(#bottomGlow)"/>
 
-		<rect x="182" y="0" width="184" height="40" rx="20" fill="#001f97" fill-opacity="0.22" stroke="#001f97" stroke-width="1.5" stroke-opacity="0.7"/>
-		<text x="274" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#a9c6ff">Push Notifications</text>
+  <!-- 2. Decorative Tech & iMessage Elements in Background -->
+  <!-- Subtle glowing rings -->
+  <circle cx="195" cy="200" r="185" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.18" stroke-dasharray="6 8"/>
+  <circle cx="1060" cy="70" r="160" fill="none" stroke="#818cf8" stroke-width="1.5" stroke-opacity="0.12" stroke-dasharray="8 8"/>
+  <circle cx="1060" cy="70" r="230" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.08"/>
 
-		<rect x="382" y="0" width="174" height="40" rx="20" fill="#001f97" fill-opacity="0.22" stroke="#001f97" stroke-width="1.5" stroke-opacity="0.7"/>
-		<text x="469" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#a9c6ff">Focus / DND Sync</text>
+  <!-- Decorative Chat Bubbles -->
+  <g opacity="0.08" transform="translate(860, 42)">
+    <rect x="0" y="0" width="260" height="64" rx="24" fill="#38bdf8"/>
+    <path d="M240 64 L260 76 L252 58 Z" fill="#38bdf8"/>
+  </g>
+  <g opacity="0.06" transform="translate(760, 130)">
+    <rect x="0" y="0" width="220" height="54" rx="22" fill="#818cf8"/>
+    <path d="M16 54 L-2 66 L6 48 Z" fill="#818cf8"/>
+  </g>
+  <g opacity="0.07" transform="translate(890, 215)">
+    <rect x="0" y="0" width="240" height="58" rx="22" fill="#38bdf8"/>
+    <path d="M220 58 L238 70 L232 54 Z" fill="#38bdf8"/>
+  </g>
 
-		<rect x="572" y="0" width="154" height="40" rx="20" fill="#001f97" fill-opacity="0.22" stroke="#001f97" stroke-width="1.5" stroke-opacity="0.7"/>
-		<text x="649" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#a9c6ff">OpenAPI + SDK</text>
-	</g>
+  <!-- 3. Left App Icon Card (User's Cat with Glasses) -->
+  <g transform="translate(68, 55)">
+    <!-- Outer Glow & Drop Shadow -->
+    <rect x="-6" y="-6" width="302" height="302" rx="68" fill="#1d4ed8" fill-opacity="0.25"/>
+    <rect x="-3" y="-3" width="296" height="296" rx="66" fill="#001f97" fill-opacity="0.35"/>
+
+    <!-- Scaled User Cat Icon (800x800 -> 290x290, scale 0.3625) -->
+    <g transform="scale(0.3625)">
+      <g id="bg">
+        <path fill-rule="evenodd" fill="#000510" d="m172 0h456c94.99 0 172 77.01 172 172v456c0 94.99-77.01 172-172 172h-456c-94.99 0-172-77.01-172-172v-456c0-94.99 77.01-172 172-172z"/>
+      </g>
+      <g id="cat copy">
+        <g id="cat things">
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m81 331.63l73.83-12.36"/>
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m95.39 430.29l68.43-34.3"/>
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m719 387.05l-84.96-20.14"/>
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m630.4 311.6c0 0 60.53-9.22 80.96-30.24"/>
+        </g>
+        <g id="body">
+          <g id="body bottom">
+            <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m487.86 499.77c0 0 107.99 23.69 140.74-82.67"/>
+            <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m540.45 640.46l-22.69-137.47"/>
+            <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m253.54 643l35.13-131.07"/>
+            <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m305.13 507.02c0 0-101.87 16.29-135.19-59.46"/>
+          </g>
+          <g id="body top">
+            <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m184.19 238.94c0 0 72.71-78.73 91.25-71.54 18.54 7.19 68.03 73.06 76.21 80.96 8.18 7.9 101.36-2.63 120.14-14.89 18.78-12.26 79.93-79.45 89.39-76.37 9.45 3.09 72.21 102.71 72.21 102.71"/>
+          </g>
+        </g>
+        <g id="mouth">
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m316.26 412.53c0 0 27.57-8.95 34.43-7.74 6.85 1.21 36.72 11.34 46.84 10.74 10.13-0.61 59.6-10.13 65.35-8.92"/>
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m354.29 416.62c0 0 4.55 26.85 5.61 29.09 1.06 2.24 18.99 28.63 38.84 26.64 19.84-2 41.49-11.23 48.2-57.38"/>
+        </g>
+        <g id="Eyes">
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="13.5" d="m464.98 372.38l73.45-56.04 55.3 66.94z"/>
+          <path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="13.5" d="m214.65 397.23l36.19-70.93 59.76 49.36z"/>
+        </g>
+        <g id="Glasses">
+          <path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m172.22 295.6c0 0-8.15 81.82 2.15 99.3 10.29 17.49 52.2 41.34 52.2 41.34 0 0 65.82 4.38 75.77 0.43 9.95-3.95 37.34-29.26 41.96-35.55 4.63-6.29 7.92-77.39 7.92-77.39 0 0-10.71-34.26-51.57-32.97-40.85 1.29-51.93-5.67-128.43 4.84z"/>
+          <path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m355.56 325.05l82.55-0.86"/>
+          <path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m438.49 333.5c0 0 1.2 80.71 25.32 98.19 24.12 17.48 95.6 13.08 107.19 10.64 11.59-2.43 28.36-15.76 31.67-33.31 7.66-17.31 17.12-48.63 17.12-53.54 0-4.91 1.26-59.47-13.72-67.83-15.22-0.84-123.55-9.1-150.3 0.26-8.72 9.11-17.79 9.79-17.28 45.59z"/>
+        </g>
+      </g>
+      <!-- Glass Edge Stroke -->
+      <path fill-rule="evenodd" fill="none" stroke="url(#glassBorder)" stroke-width="10" d="m172 0h456c94.99 0 172 77.01 172 172v456c0 94.99-77.01 172-172 172h-456c-94.99 0-172-77.01-172-172v-456c0-94.99 77.01-172 172-172z"/>
+    </g>
+  </g>
+
+  <!-- 4. Right Content Typography & Badges -->
+  <g transform="translate(412, 0)">
+    <!-- Header Meta Tags -->
+    <g transform="translate(0, 68)">
+      <rect x="0" y="0" width="144" height="28" rx="14" fill="#0f172a" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.5"/>
+      <circle cx="14" cy="14" r="4.5" fill="#38bdf8"/>
+      <text x="26" y="19" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#7dd3fc" letter-spacing="0.5">ROOTLESS TWEAK</text>
+
+      <rect x="154" y="0" width="112" height="28" rx="14" fill="#0f172a" stroke="#c084fc" stroke-width="1.2" stroke-opacity="0.5"/>
+      <circle cx="168" cy="14" r="4.5" fill="#c084fc"/>
+      <text x="180" y="19" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#e9d5ff" letter-spacing="0.5">iOS 15 – 16</text>
+
+      <rect x="276" y="0" width="102" height="28" rx="14" fill="#0f172a" stroke="#818cf8" stroke-width="1.2" stroke-opacity="0.5"/>
+      <circle cx="290" cy="14" r="4.5" fill="#818cf8"/>
+      <text x="302" y="19" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#c7d2fe" letter-spacing="0.5">PORT 8737</text>
+    </g>
+
+    <!-- App Title -->
+    <text x="0" y="160" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="78" font-weight="800" fill="#ffffff" letter-spacing="-1.5">meowtxt</text>
+
+    <!-- Tagline -->
+    <text x="2" y="208" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="500" fill="#93c5fd">On-Device iMessage Web Client, PWA &amp; REST + SSE API</text>
+
+    <!-- Feature Badges -->
+    <g transform="translate(2, 248)">
+      <!-- Badge 1: iMessage + SSE (Lightning) -->
+      <g transform="translate(0, 0)">
+        <rect width="172" height="42" rx="21" fill="#0c4a6e" fill-opacity="0.45" stroke="#0284c7" stroke-width="1.5" stroke-opacity="0.8"/>
+        <path d="M22 13 L14 24 L19 24 L17 31 L26 20 L21 20 Z" fill="#38bdf8"/>
+        <text x="96" y="26.5" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" font-weight="600" fill="#38bdf8">iMessage + SSE</text>
+      </g>
+
+      <!-- Badge 2: Focus / DND (Moon) -->
+      <g transform="translate(184, 0)">
+        <rect width="186" height="42" rx="21" fill="#4a044e" fill-opacity="0.4" stroke="#a21caf" stroke-width="1.5" stroke-opacity="0.8"/>
+        <path d="M24 14 C19 14 15 18 15 23 C15 28 19 32 24 32 C26 32 28 31 29 30 C25 29 22 25 22 21 C22 17 25 14 28 13 C27 13 25 14 24 14 Z" fill="#f0abfc"/>
+        <text x="104" y="26.5" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" font-weight="600" fill="#f0abfc">Focus / DND Sync</text>
+      </g>
+
+      <!-- Badge 3: Web Notifications (Bell) -->
+      <g transform="translate(382, 0)">
+        <rect width="190" height="42" rx="21" fill="#064e3b" fill-opacity="0.4" stroke="#059669" stroke-width="1.5" stroke-opacity="0.8"/>
+        <path d="M24 13 C20 13 18 16 18 19 L18 25 L16 27 L16 28 L32 28 L32 27 L30 25 L30 19 C30 16 28 13 24 13 Z M22 29 C22 30.1 22.9 31 24 31 C25.1 31 26 30.1 26 29 Z" fill="#34d399"/>
+        <text x="105" y="26.5" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" font-weight="600" fill="#34d399">Web Notifications</text>
+      </g>
+
+      <!-- Badge 4: OpenAPI 3.1 (Code Brackets) -->
+      <g transform="translate(584, 0)">
+        <rect width="160" height="42" rx="21" fill="#312e81" fill-opacity="0.4" stroke="#4f46e5" stroke-width="1.5" stroke-opacity="0.8"/>
+        <path d="M19 16 L14 21 L19 26 M29 16 L34 21 L29 26 M25 15 L23 27" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="94" y="26.5" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" font-weight="600" fill="#818cf8">OpenAPI 3.1</text>
+      </g>
+    </g>
+
+    <!-- Sub-features footer -->
+    <g transform="translate(4, 324)" opacity="0.75">
+      <text x="0" y="0" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13.5" font-weight="500" fill="#94a3b8">Two-Way Pinned Chats &#8226; Full CORS &#8226; Hardware HEIC Transcoding &#8226; Chrome Isolated Web App (IWA)</text>
+    </g>
+  </g>
 </svg>
