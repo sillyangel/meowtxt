@@ -1,32 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34c8ff"/>
-      <stop offset="48%" stop-color="#0a84ff"/>
-      <stop offset="100%" stop-color="#5e5ce6"/>
-    </linearGradient>
-    <linearGradient id="bubbleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#e8f2ff"/>
-    </linearGradient>
-  </defs>
-  <!-- Full-bleed background for PWA/IWA maskable safe zone -->
-  <rect width="512" height="512" fill="url(#bgGrad)"/>
-  <g transform="translate(38, 38) scale(0.85)">
-    <path d="M138 190 L152 106 C154 94 168 90 176 99 L232 162 Z" fill="url(#bubbleGrad)"/>
-    <path d="M374 190 L360 106 C358 94 344 90 336 99 L280 162 Z" fill="url(#bubbleGrad)"/>
-    <path d="M154 172 L163 122 L202 165 Z" fill="#0a84ff" opacity="0.25"/>
-    <path d="M358 172 L349 122 L310 165 Z" fill="#5e5ce6" opacity="0.25"/>
-    <path d="M256 144 C162 144 92 200 92 272 C92 312 115 347 152 371 C147 394 132 414 116 424 C112 427 114 433 119 433 C153 432 186 416 207 395 C223 398 239 400 256 400 C350 400 420 344 420 272 C420 200 350 144 256 144 Z" fill="url(#bubbleGrad)"/>
-    <circle cx="204" cy="256" r="16" fill="#0f172a"/>
-    <circle cx="308" cy="256" r="16" fill="#0f172a"/>
-    <circle cx="199" cy="251" r="5" fill="#ffffff"/>
-    <circle cx="303" cy="251" r="5" fill="#ffffff"/>
-    <path d="M246 276 L266 276 L256 289 Z" fill="#0a84ff"/>
-    <path d="M230 296 Q243 310 256 294 Q269 310 282 296" fill="none" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="132" y1="268" x2="166" y2="274" stroke="#0a84ff" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
-    <line x1="132" y1="292" x2="166" y2="288" stroke="#0a84ff" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
-    <line x1="380" y1="268" x2="346" y2="274" stroke="#5e5ce6" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
-    <line x1="380" y1="292" x2="346" y2="288" stroke="#5e5ce6" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
-  </g>
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+	<style>
+		.s0 { fill: #000510 } 
+		.s1 { fill: none;stroke: #000251;stroke-linecap: round;stroke-linejoin: round;stroke-width: 27.5 } 
+		.s2 { fill: none;stroke: #000251;stroke-linecap: round;stroke-linejoin: round;stroke-width: 13.5 } 
+		.s3 { fill: none;stroke: #001f97;stroke-linecap: round;stroke-linejoin: round;stroke-width: 27.5 } 
+	</style>
+	<g id="bg">
+		<path id="Shape 17" fill-rule="evenodd" class="s0" d="m800 0v800h-800v-800z"/>
+	</g>
+	<g id="cat copy">
+		<g id="cat things">
+			<path id="Shape 1" fill-rule="evenodd" class="s1" d="m81 331.63l73.83-12.36"/>
+			<path id="Shape 2" fill-rule="evenodd" class="s1" d="m95.39 430.29l68.43-34.3"/>
+			<path id="Shape 3" fill-rule="evenodd" class="s1" d="m719 387.05l-84.96-20.14"/>
+			<path id="Shape 4" fill-rule="evenodd" class="s1" d="m630.4 311.6c0 0 60.53-9.22 80.96-30.24"/>
+		</g>
+		<g id="body">
+			<g id="body bottom">
+				<path id="Shape 5" fill-rule="evenodd" class="s1" d="m487.86 499.77c0 0 107.99 23.69 140.74-82.67"/>
+				<path id="Shape 6" fill-rule="evenodd" class="s1" d="m540.44 640.46l-22.68-137.47"/>
+				<path id="Shape 7" fill-rule="evenodd" class="s1" d="m253.54 643l35.13-131.08"/>
+				<path id="Shape 8" fill-rule="evenodd" class="s1" d="m305.13 507.02c0 0-101.87 16.29-135.19-59.46"/>
+			</g>
+			<g id="body top">
+				<path id="Shape 9" fill-rule="evenodd" class="s1" d="m184.19 238.94c0 0 72.71-78.73 91.25-71.54 18.54 7.19 68.03 73.06 76.21 80.96 8.18 7.9 101.35-2.63 120.14-14.89 18.78-12.26 79.93-79.45 89.39-76.37 9.45 3.09 72.21 102.71 72.21 102.71"/>
+			</g>
+		</g>
+		<g id="mouth">
+			<path id="Shape 10" fill-rule="evenodd" class="s1" d="m316.26 412.53c0 0 27.57-8.95 34.43-7.74 6.85 1.21 36.72 11.34 46.84 10.73 10.13-0.6 59.6-10.12 65.35-8.91"/>
+			<path id="Shape 11" fill-rule="evenodd" class="s1" d="m354.29 416.62c0 0 4.55 26.85 5.61 29.09 1.06 2.24 18.99 28.63 38.84 26.64 19.84-2 41.49-11.23 48.2-57.38"/>
+		</g>
+		<g id="Eyes">
+			<path id="Shape 15" fill-rule="evenodd" class="s2" d="m464.98 372.38l73.45-56.04 55.3 66.94z"/>
+			<path id="Shape 16" fill-rule="evenodd" class="s2" d="m214.65 397.23l36.19-70.93 59.76 49.36z"/>
+		</g>
+		<g id="Glasses">
+			<path id="Shape 12" fill-rule="evenodd" class="s3" d="m172.22 295.59c0 0-8.14 81.83 2.15 99.32 10.29 17.48 52.2 41.33 52.2 41.33 0 0 65.82 4.38 75.77 0.43 9.95-3.95 37.34-29.26 41.96-35.55 4.63-6.29 7.92-77.39 7.92-77.39 0 0-10.71-34.26-51.57-32.97-40.85 1.29-51.93-5.67-128.43 4.83z"/>
+			<path id="Shape 13" fill-rule="evenodd" class="s3" d="m355.56 325.05l82.55-0.86"/>
+			<path id="Shape 14" fill-rule="evenodd" class="s3" d="m438.48 333.5c0 0 1.21 80.71 25.33 98.19 24.13 17.48 95.6 13.08 107.19 10.64 11.59-2.43 28.36-15.76 31.67-33.31 7.66-17.31 17.12-48.63 17.12-53.54 0-4.91 1.26-59.47-13.72-67.83-15.22-0.84-123.55-9.1-150.3 0.26-8.72 9.11-17.79 9.79-17.29 45.59z"/>
+		</g>
+	</g>
 </svg>

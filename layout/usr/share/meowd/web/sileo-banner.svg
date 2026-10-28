@@ -1,52 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
-  <defs>
-    <linearGradient id="bannerBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a0e17"/>
-      <stop offset="45%" stop-color="#0f1f3d"/>
-      <stop offset="100%" stop-color="#1e1b4b"/>
-    </linearGradient>
-    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34c8ff"/>
-      <stop offset="50%" stop-color="#0a84ff"/>
-      <stop offset="100%" stop-color="#bf5af2"/>
-    </linearGradient>
-  </defs>
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+	<defs>
+		<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#000510"/>
+			<stop offset="55%" stop-color="#00081c"/>
+			<stop offset="100%" stop-color="#000f38"/>
+		</linearGradient>
+		<radialGradient id="glowGrad" cx="22%" cy="50%" r="48%">
+			<stop offset="0%" stop-color="#001f97" stop-opacity="0.32"/>
+			<stop offset="100%" stop-color="#000510" stop-opacity="0"/>
+		</radialGradient>
+	</defs>
 
-  <rect width="1200" height="400" fill="url(#bannerBg)"/>
+	<rect width="1200" height="400" fill="url(#bgGrad)"/>
+	<rect width="1200" height="400" fill="url(#glowGrad)"/>
 
-  <!-- Decorative Grid / Bubbles -->
-  <circle cx="1020" cy="80" r="220" fill="#0a84ff" opacity="0.14"/>
-  <circle cx="180" cy="340" r="190" fill="#5e5ce6" opacity="0.16"/>
-  <circle cx="880" cy="320" r="140" fill="#bf5af2" opacity="0.12"/>
+	<!-- Subtle background grid accents -->
+	<circle cx="1060" cy="80" r="190" fill="none" stroke="#001f97" stroke-width="2" stroke-opacity="0.18"/>
+	<circle cx="1060" cy="80" r="260" fill="none" stroke="#000251" stroke-width="2" stroke-opacity="0.25"/>
 
-  <!-- App Icon Card on Left -->
-  <g transform="translate(110, 72) scale(0.5)">
-    <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#accentGlow)"/>
-    <path d="M138 190 L152 106 C154 94 168 90 176 99 L232 162 Z" fill="#ffffff"/>
-    <path d="M374 190 L360 106 C358 94 344 90 336 99 L280 162 Z" fill="#ffffff"/>
-    <path d="M256 144 C162 144 92 200 92 272 C92 312 115 347 152 371 C147 394 132 414 116 424 C112 427 114 433 119 433 C153 432 186 416 207 395 C223 398 239 400 256 400 C350 400 420 344 420 272 C420 200 350 144 256 144 Z" fill="#ffffff"/>
-    <circle cx="204" cy="256" r="16" fill="#0f172a"/>
-    <circle cx="308" cy="256" r="16" fill="#0f172a"/>
-    <path d="M246 276 L266 276 L256 289 Z" fill="#0a84ff"/>
-    <path d="M230 296 Q243 310 256 294 Q269 310 282 296" fill="none" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
+	<!-- Left Icon Card (scaled from user's 800x800 icon.svg) -->
+	<g transform="translate(88, 52) scale(0.37)">
+		<g id="bg">
+			<path fill-rule="evenodd" fill="#000510" d="m172 0h456c94.99 0 172 77.01 172 172v456c0 94.99-77.01 172-172 172h-456c-94.99 0-172-77.01-172-172v-456c0-94.99 77.01-172 172-172z"/>
+			<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-width="6" stroke-opacity="0.45" d="m172 0h456c94.99 0 172 77.01 172 172v456c0 94.99-77.01 172-172 172h-456c-94.99 0-172-77.01-172-172v-456c0-94.99 77.01-172 172-172z"/>
+		</g>
+		<g id="cat copy">
+			<g id="cat things">
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m81 331.63l73.83-12.36"/>
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m95.39 430.29l68.43-34.3"/>
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m719 387.05l-84.96-20.14"/>
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m630.4 311.6c0 0 60.53-9.22 80.96-30.24"/>
+			</g>
+			<g id="body">
+				<g id="body bottom">
+					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m487.86 499.77c0 0 107.99 23.69 140.74-82.67"/>
+					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m540.45 640.46l-22.69-137.47"/>
+					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m253.54 643l35.13-131.07"/>
+					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m305.13 507.02c0 0-101.87 16.29-135.19-59.46"/>
+				</g>
+				<g id="body top">
+					<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m184.19 238.94c0 0 72.71-78.73 91.25-71.54 18.54 7.19 68.03 73.06 76.21 80.96 8.18 7.9 101.36-2.63 120.14-14.89 18.78-12.26 79.93-79.45 89.39-76.37 9.45 3.09 72.21 102.71 72.21 102.71"/>
+				</g>
+			</g>
+			<g id="mouth">
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m316.26 412.53c0 0 27.57-8.95 34.43-7.74 6.85 1.21 36.72 11.34 46.84 10.74 10.13-0.61 59.6-10.13 65.35-8.92"/>
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m354.29 416.62c0 0 4.55 26.85 5.61 29.09 1.06 2.24 18.99 28.63 38.84 26.64 19.84-2 41.49-11.23 48.2-57.38"/>
+			</g>
+			<g id="Eyes">
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="13.5" d="m464.98 372.38l73.45-56.04 55.3 66.94z"/>
+				<path fill-rule="evenodd" fill="none" stroke="#000251" stroke-linecap="round" stroke-linejoin="round" stroke-width="13.5" d="m214.65 397.23l36.19-70.93 59.76 49.36z"/>
+			</g>
+			<g id="Glasses">
+				<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m172.22 295.6c0 0-8.15 81.82 2.15 99.3 10.29 17.49 52.2 41.34 52.2 41.34 0 0 65.82 4.38 75.77 0.43 9.95-3.95 37.34-29.26 41.96-35.55 4.63-6.29 7.92-77.39 7.92-77.39 0 0-10.71-34.26-51.57-32.97-40.85 1.29-51.93-5.67-128.43 4.84z"/>
+				<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m355.56 325.05l82.55-0.86"/>
+				<path fill-rule="evenodd" fill="none" stroke="#001f97" stroke-linecap="round" stroke-linejoin="round" stroke-width="27.5" d="m438.49 333.5c0 0 1.2 80.71 25.32 98.19 24.12 17.48 95.6 13.08 107.19 10.64 11.59-2.43 28.36-15.76 31.67-33.31 7.66-17.31 17.12-48.63 17.12-53.54 0-4.91 1.26-59.47-13.72-67.83-15.22-0.84-123.55-9.1-150.3 0.26-8.72 9.11-17.79 9.79-17.28 45.59z"/>
+			</g>
+		</g>
+	</g>
 
-  <!-- Title & Tagline -->
-  <text x="415" y="175" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="68" font-weight="800" fill="#ffffff" letter-spacing="-1.5">meowtxt</text>
-  <text x="418" y="228" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif" font-size="26" font-weight="500" fill="#93c5fd">On-Device iMessage Web Client, PWA/IWA &amp; REST + SSE API</text>
+	<!-- Typography -->
+	<text x="430" y="175" font-family="Inter, Helvetica, Arial, sans-serif" font-size="78" font-weight="800" fill="#eef3ff">meowtxt</text>
+	<text x="434" y="226" font-family="Inter, Helvetica, Arial, sans-serif" font-size="25" font-weight="500" fill="#7aa2f7">iMessage Web, PWA / IWA &amp; REST + SSE API Daemon</text>
 
-  <!-- Feature Pills -->
-  <g transform="translate(418, 258)">
-    <rect x="0" y="0" width="160" height="40" rx="20" fill="#0a84ff" fill-opacity="0.22" stroke="#0a84ff" stroke-opacity="0.5"/>
-    <text x="80" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#e0f2fe">iMessage + SSE</text>
+	<!-- Feature Badges -->
+	<g transform="translate(434, 258)">
+		<rect x="0" y="0" width="166" height="40" rx="20" fill="#001f97" fill-opacity="0.32" stroke="#001f97" stroke-width="1.5"/>
+		<text x="83" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#c8dbff">Rootless iOS 15–16</text>
 
-    <rect x="176" y="0" width="175" height="40" rx="20" fill="#bf5af2" fill-opacity="0.22" stroke="#bf5af2" stroke-opacity="0.5"/>
-    <text x="263" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#f3e8ff">Focus / DND Sync</text>
+		<rect x="182" y="0" width="184" height="40" rx="20" fill="#001f97" fill-opacity="0.22" stroke="#001f97" stroke-width="1.5" stroke-opacity="0.7"/>
+		<text x="274" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#a9c6ff">Push Notifications</text>
 
-    <rect x="367" y="0" width="185" height="40" rx="20" fill="#30d158" fill-opacity="0.2" stroke="#30d158" stroke-opacity="0.5"/>
-    <text x="459" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#dcfce7">Web Notifications</text>
+		<rect x="382" y="0" width="174" height="40" rx="20" fill="#001f97" fill-opacity="0.22" stroke="#001f97" stroke-width="1.5" stroke-opacity="0.7"/>
+		<text x="469" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#a9c6ff">Focus / DND Sync</text>
 
-    <rect x="568" y="0" width="155" height="40" rx="20" fill="#5e5ce6" fill-opacity="0.25" stroke="#5e5ce6" stroke-opacity="0.5"/>
-    <text x="645" y="26" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="600" fill="#e0e7ff">OpenAPI 3.1</text>
-  </g>
+		<rect x="572" y="0" width="154" height="40" rx="20" fill="#001f97" fill-opacity="0.22" stroke="#001f97" stroke-width="1.5" stroke-opacity="0.7"/>
+		<text x="649" y="26" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#a9c6ff">OpenAPI + SDK</text>
+	</g>
 </svg>
