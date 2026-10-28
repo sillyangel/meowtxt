@@ -14,11 +14,57 @@ static const uint16_t kDefaultPort = 8737;
 
 static NSString *gToken;
 static BOOL gEnabled = YES;
+static BOOL gVerbose = YES;
 static BOOL gRequireAuth = YES;
 static NSDate *gPrefsLastMod;
 static NSMutableDictionary<NSString *, NSNumber *> *gNotificationEvents;
 static NSMutableArray<NSString *> *gNotificationWebhooks;
 static NSMutableDictionary<NSString *, NSNumber *> *gNotifiedStateByGUID;
+
+#pragma mark - log helpers
+
+static NSString *MWClientDesc(MWRequest *req) {
+    NSString *ip = req.remoteAddress ?: @"127.0.0.1";
+    NSString *ua = req.headers[@"user-agent"];
+    if (!ua.length) return ip;
+    if ([ua containsString:@"iPhone"] || [ua containsString:@"iPad"]) {
+        return [NSString stringWithFormat:@"%@ [iOS Client]", ip];
+    } else if ([ua containsString:@"Macintosh"] && [ua containsString:@"Safari"] && ![ua containsString:@"Chrome"]) {
+        return [NSString stringWithFormat:@"%@ [Mac Safari]", ip];
+    } else if ([ua containsString:@"Chrome"] || [ua containsString:@"CriOS"]) {
+        return [NSString stringWithFormat:@"%@ [Chrome]", ip];
+    } else if ([ua containsString:@"Firefox"]) {
+        return [NSString stringWithFormat:@"%@ [Firefox]", ip];
+    } else if ([ua containsString:@"curl"]) {
+        return [NSString stringWithFormat:@"%@ [curl]", ip];
+    }
+    if (ua.length > 36) {
+        return [NSString stringWithFormat:@"%@ [%@...]", ip, [ua substringToIndex:33]];
+    }
+    return [NSString stringWithFormat:@"%@ [%@]", ip, ua];
+}
+
+static NSString *MWSnippet(NSString *text, NSUInteger maxLen) {
+    if (![text isKindOfClass:NSString.class] || !text.length) return @"";
+    NSString *clean = [text stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
+    clean = [clean stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+    if (clean.length <= maxLen) return clean;
+    return [NSString stringWithFormat:@"%@...", [clean substringToIndex:maxLen]];
+}
+
+static NSString *MWTimestampString(long long ms) {
+    if (ms <= 0) return @"";
+    NSDate *d = [NSDate dateWithTimeIntervalSince1970:(double)ms / 1000.0];
+    static NSDateFormatter *df;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        df = [NSDateFormatter new];
+        df.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+    });
+    @synchronized (df) {
+        return [df stringFromDate:d];
+    }
+}
 
 #pragma mark - config
 
@@ -44,10 +90,12 @@ static NSDictionary *MWLoadConfig(void) {
     }
     if (!cfg[@"port"]) { cfg[@"port"] = @(kDefaultPort); dirty = YES; }
     if (cfg[@"enabled"] == nil) { cfg[@"enabled"] = @YES; dirty = YES; }
+    if (cfg[@"verboseLogging"] == nil && cfg[@"verbose"] == nil) { cfg[@"verboseLogging"] = @YES; dirty = YES; }
     if (cfg[@"requireAuth"] == nil) { cfg[@"requireAuth"] = @YES; dirty = YES; }
 
     gToken = [cfg[@"token"] description];
     gEnabled = cfg[@"enabled"] ? [cfg[@"enabled"] boolValue] : YES;
+    gVerbose = cfg[@"verboseLogging"] != nil ? [cfg[@"verboseLogging"] boolValue] : (cfg[@"verbose"] != nil ? [cfg[@"verbose"] boolValue] : YES);
     gRequireAuth = cfg[@"requireAuth"] ? [cfg[@"requireAuth"] boolValue] : YES;
 
     NSDictionary *savedNotifs = [cfg[@"notifications"] isKindOfClass:NSDictionary.class] ? cfg[@"notifications"] : @{};
@@ -90,7 +138,7 @@ static void MWReloadConfigIfChanged(void) {
     NSDate *mod = attrs[NSFileModificationDate];
     if (mod && (!gPrefsLastMod || ![mod isEqualToDate:gPrefsLastMod])) {
         MWLoadConfig();
-        MWLog(@"reloaded preferences from Settings (enabled=%d, requireAuth=%d)", gEnabled, gRequireAuth);
+        MWLog(@"reloaded preferences from Settings (enabled=%d, verbose=%d, requireAuth=%d)", gEnabled, gVerbose, gRequireAuth);
     }
 }
 
@@ -241,6 +289,24 @@ static BOOL MWIsIMessageChat(id guid) {
     return [guid isKindOfClass:NSString.class] && [guid hasPrefix:@"iMessage;"];
 }
 
+static NSString *MWChatLabel(NSString *chatGUID) {
+    if (![chatGUID isKindOfClass:NSString.class] || !chatGUID.length) return @"(unknown)";
+    NSDictionary *c = [[MWDatabase shared] chatWithGUID:chatGUID];
+    if (c) {
+        NSDictionary *dec = MWDecorateChat(c);
+        if ([dec[@"title"] isKindOfClass:NSString.class] && [dec[@"title"] length]) {
+            return [NSString stringWithFormat:@"'%@' (%@)", dec[@"title"], chatGUID];
+        }
+    }
+    if ([chatGUID hasPrefix:@"iMessage;-;"]) {
+        NSString *handle = [chatGUID substringFromIndex:11];
+        NSString *name = [[MWContacts shared] nameForHandle:handle];
+        if (name.length) return [NSString stringWithFormat:@"'%@' (%@)", name, handle];
+        return handle;
+    }
+    return chatGUID;
+}
+
 #pragma mark - change poller
 
 static void MWBroadcastPinnedUpdate(void) {
@@ -340,11 +406,20 @@ static void MWStartPoller(void) {
                         : ([m[@"attachments"] count] ? @"📎 Attachment" : @"iMessage");
 
                     if (fromMe) {
+                        if (gVerbose) {
+                            MWLog(@"[OUTGOING] Sent message in %@: guid=%@ text='%@'",
+                                  MWChatLabel(chatGUID), guid, MWSnippet(textPreview, 80));
+                        }
                         MWEmitNotification(@"sent",
                                            [NSString stringWithFormat:@"Sent to %@", chatTitle],
                                            textPreview, chatGUID, avatarUrl, m, NO);
                     } else {
                         NSString *sender = [m[@"sender"] isKindOfClass:NSString.class] ? (names[m[@"sender"]] ?: m[@"sender"]) : chatTitle;
+                        if (gVerbose) {
+                            MWLog(@"[INCOMING] New message from '%@' in %@: guid=%@ text='%@'%@",
+                                  sender, MWChatLabel(chatGUID), guid, MWSnippet(textPreview, 80),
+                                  [m[@"attachments"] count] ? [NSString stringWithFormat:@" [%lu attachments]", (unsigned long)[m[@"attachments"] count]] : @"");
+                        }
                         MWEmitNotification(@"received",
                                            sender,
                                            textPreview, chatGUID, avatarUrl, m, NO);
@@ -383,11 +458,19 @@ static void MWStartPoller(void) {
 
                     if (isRead && !(prevMask & 4) && (prevMask != 0 || (dateRead > 0 && (nowMs - dateRead) < 15000LL))) {
                         gNotifiedStateByGUID[guid] = @(prevMask | 1 | 2 | 4);
+                        if (gVerbose) {
+                            MWLog(@"[READ-RECEIPT] Message read by recipient in %@: guid=%@ text='%@' (read at: %@)",
+                                  MWChatLabel(chatGUID), guid, MWSnippet(textPreview, 60), MWTimestampString(dateRead));
+                        }
                         MWEmitNotification(@"read",
                                            [NSString stringWithFormat:@"Read by %@", chatTitle],
                                            textPreview, chatGUID, avatarUrl, m, NO);
                     } else if (isDelivered && !isRead && !(prevMask & 2) && (prevMask != 0 || (dateDelivered > 0 && (nowMs - dateDelivered) < 15000LL))) {
                         gNotifiedStateByGUID[guid] = @(prevMask | 1 | 2);
+                        if (gVerbose) {
+                            MWLog(@"[DELIVERY-RECEIPT] Message delivered to %@: guid=%@ (quietly=%d)",
+                                  MWChatLabel(chatGUID), guid, [m[@"wasDeliveredQuietly"] boolValue]);
+                        }
                         NSString *delivTitle = [m[@"wasDeliveredQuietly"] boolValue]
                             ? [NSString stringWithFormat:@"Delivered Quietly to %@ 🌙", chatTitle]
                             : [NSString stringWithFormat:@"Delivered to %@", chatTitle];
@@ -561,6 +644,9 @@ static MWResponse *MWStatic(MWRequest *req) {
     if (([mime hasPrefix:@"text/"] || [mime containsString:@"javascript"]) && ![mime containsString:@"charset"]) {
         mime = [mime stringByAppendingString:@"; charset=utf-8"];
     }
+    if (gVerbose && ([req.path isEqualToString:@"/"] || [rel isEqualToString:@"index.html"])) {
+        MWLog(@"[VIEW] %@ loaded Web Client (/) [%@]", MWClientDesc(req), req.headers[@"user-agent"] ?: @"unknown");
+    }
     MWResponse *r = [MWResponse data:d type:mime];
     r.headers[@"Cache-Control"] = @"no-cache";
     r.headers[@"Service-Worker-Allowed"] = @"/";
@@ -630,13 +716,17 @@ static MWResponse *MWRoute(MWRequest *req) {
         if (![m isEqualToString:@"GET"] && ![m isEqualToString:@"HEAD"]) return [MWResponse error:@"method not allowed" status:405];
         return MWStatic(req);
     }
-    if (!MWAuthorized(req)) return [MWResponse error:@"unauthorized" status:401];
+    if (!MWAuthorized(req)) {
+        MWLog(@"[AUTH-FAIL] %@ unauthorized access attempt to %@ %@", MWClientDesc(req), m, p);
+        return [MWResponse error:@"unauthorized" status:401];
+    }
 
     BOOL get = [m isEqualToString:@"GET"] || [m isEqualToString:@"HEAD"], post = [m isEqualToString:@"POST"];
     NSDictionary *q = req.query;
     NSDictionary *body = post ? ([[req JSONBody] isKindOfClass:NSDictionary.class] ? [req JSONBody] : @{}) : @{};
 
     if (get && [p isEqualToString:@"/api/status"]) {
+        if (gVerbose) MWLog(@"[STATUS] %@ queried system & iMessage health", MWClientDesc(req));
         NSMutableDictionary *st = [[[MWIMBridge shared] status] mutableCopy];
         st[@"enabled"] = @(gEnabled);
         st[@"requireAuth"] = @(gRequireAuth);
@@ -701,10 +791,17 @@ static MWResponse *MWRoute(MWRequest *req) {
         for (NSDictionary *c in [[MWDatabase shared] chatsWithLimit:limit offset:offset]) {
             [chats addObject:MWDecorateChatWithPins(c, pins)];
         }
+        if (gVerbose) {
+            MWLog(@"[CHATS] %@ viewed conversations list (returned %lu chats, limit=%ld, offset=%ld)",
+                  MWClientDesc(req), (unsigned long)chats.count, (long)limit, (long)offset);
+        }
         return [MWResponse json:@{@"ok": @YES, @"chats": chats, @"pinnedIdentifiers": pins}];
     }
     if (get && [p isEqualToString:@"/api/chat"]) {
         NSDictionary *c = MWStr(q[@"guid"]) ? [[MWDatabase shared] chatWithGUID:q[@"guid"]] : nil;
+        if (gVerbose && c) {
+            MWLog(@"[CHAT] %@ loaded conversation %@", MWClientDesc(req), MWChatLabel(q[@"guid"]));
+        }
         return c ? [MWResponse json:@{@"ok": @YES, @"chat": MWDecorateChat(c)}] : [MWResponse error:@"chat not found" status:404];
     }
     if (get && [p isEqualToString:@"/api/messages"]) {
@@ -721,6 +818,18 @@ static MWResponse *MWRoute(MWRequest *req) {
                 (nowMs - [latest[@"date"] longLongValue]) < 3600000LL) {
                 dnd = YES;
             }
+        }
+        if (gVerbose) {
+            NSString *summary = @"";
+            if (msgs.count) {
+                NSDictionary *top = msgs.firstObject;
+                summary = [NSString stringWithFormat:@" (latest: guid=%@, text='%@', date=%@)",
+                           top[@"guid"],
+                           MWSnippet(top[@"text"], 40),
+                           MWTimestampString([top[@"date"] longLongValue])];
+            }
+            MWLog(@"[ACCESS] %@ accessed %lu messages from %@ (before=%lld, limit=%ld)%@",
+                  MWClientDesc(req), (unsigned long)msgs.count, MWChatLabel(chat), [q[@"before"] longLongValue], (long)limit, summary);
         }
         return [MWResponse json:@{
             @"ok": @YES,
@@ -741,6 +850,10 @@ static MWResponse *MWRoute(MWRequest *req) {
     }
     if (get && [p isEqualToString:@"/api/message"]) {
         NSDictionary *msg = MWStr(q[@"guid"]) ? [[MWDatabase shared] messageWithGUID:q[@"guid"]] : nil;
+        if (gVerbose && msg) {
+            MWLog(@"[ACCESS] %@ fetched single message guid=%@ in %@: '%@'",
+                  MWClientDesc(req), q[@"guid"], MWChatLabel(msg[@"chat"]), MWSnippet(msg[@"text"], 50));
+        }
         return msg ? [MWResponse json:@{@"ok": @YES, @"message": msg, @"names": MWNamesForMessages(@[msg]), @"avatars": MWAvatarsForMessages(@[msg])}]
                    : [MWResponse error:@"message not found" status:404];
     }
@@ -748,10 +861,19 @@ static MWResponse *MWRoute(MWRequest *req) {
         NSString *term = MWStr(q[@"q"]);
         if (!term) return [MWResponse error:@"q is required" status:400];
         NSArray *msgs = [[MWDatabase shared] searchMessages:term limit:MIN(MAX([q[@"limit"] integerValue], 1), 200) ?: 50];
+        if (gVerbose) {
+            MWLog(@"[SEARCH] %@ searched messages for query='%@' -> %lu results",
+                  MWClientDesc(req), term, (unsigned long)msgs.count);
+        }
         return [MWResponse json:@{@"ok": @YES, @"messages": msgs, @"names": MWNamesForMessages(msgs)}];
     }
     if (get && [p isEqualToString:@"/api/contacts"]) {
-        return [MWResponse json:@{@"ok": @YES, @"contacts": [[MWContacts shared] search:q[@"q"] ?: @"" limit:50]}];
+        NSArray *contacts = [[MWContacts shared] search:q[@"q"] ?: @"" limit:50];
+        if (gVerbose) {
+            MWLog(@"[CONTACTS] %@ searched contacts for query='%@' -> %lu results",
+                  MWClientDesc(req), q[@"q"] ?: @"", (unsigned long)contacts.count);
+        }
+        return [MWResponse json:@{@"ok": @YES, @"contacts": contacts}];
     }
     if (get && [p isEqualToString:@"/api/avatar"]) {
         NSString *handle = MWStr(q[@"handle"]);
@@ -759,6 +881,9 @@ static MWResponse *MWRoute(MWRequest *req) {
         NSString *mime = nil;
         NSData *img = [[MWContacts shared] avatarDataForHandle:handle mimeType:&mime];
         if (!img) return [MWResponse error:@"avatar not found" status:404];
+        if (gVerbose) {
+            MWLog(@"[AVATAR-ACCESS] %@ loaded avatar for '%@' (%lu bytes)", MWClientDesc(req), handle, (unsigned long)img.length);
+        }
         MWResponse *r = [MWResponse data:img type:mime ?: @"image/jpeg"];
         r.headers[@"Cache-Control"] = @"private, max-age=3600";
         return r;
@@ -768,6 +893,10 @@ static MWResponse *MWRoute(MWRequest *req) {
         NSDictionary *a = [[MWDatabase shared] attachmentWithID:rowid];
         NSString *path = MWStr(a[@"path"]);
         if (!path) return [MWResponse error:@"attachment not found" status:404];
+        if (gVerbose) {
+            MWLog(@"[ATTACHMENT-ACCESS] %@ accessed attachment id=%lld name='%@' mime='%@' (thumb=%@, raw=%@)",
+                  MWClientDesc(req), rowid, a[@"name"] ?: @"(unknown)", a[@"mime"] ?: @"(unknown)", q[@"thumb"] ?: @"0", q[@"raw"] ?: @"0");
+        }
         if (![q[@"raw"] isEqualToString:@"1"]) {
             BOOL thumb = [q[@"thumb"] isEqualToString:@"1"];
             NSString *transMime = nil;
@@ -784,7 +913,7 @@ static MWResponse *MWRoute(MWRequest *req) {
             sub.pending = [NSMutableArray array];
             sub.signal = dispatch_semaphore_create(0);
             @synchronized (gSubscribers) { [gSubscribers addObject:sub]; }
-            MWLog(@"event stream opened from %@", req.remoteAddress);
+            MWLog(@"[STREAM] %@ connected to real-time event stream (/api/events)", MWClientDesc(req));
             BOOL alive = write([@"retry: 3000\nevent: hello\ndata: {}\n\n" dataUsingEncoding:NSUTF8StringEncoding]);
             while (alive) {
                 long timedOut = dispatch_semaphore_wait(sub.signal, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_SEC));
@@ -794,7 +923,7 @@ static MWResponse *MWRoute(MWRequest *req) {
                 if (alive && timedOut) alive = write([@": ping\n\n" dataUsingEncoding:NSUTF8StringEncoding]);
             }
             @synchronized (gSubscribers) { [gSubscribers removeObject:sub]; }
-            MWLog(@"event stream closed from %@", req.remoteAddress);
+            MWLog(@"[STREAM] %@ disconnected from real-time event stream", MWClientDesc(req));
         };
         return r;
     }
@@ -803,6 +932,7 @@ static MWResponse *MWRoute(MWRequest *req) {
         NSString *chatGUID = MWStr(body[@"chat"]);
         if (!MWIsIMessageChat(chatGUID)) return [MWResponse error:@"chat (an iMessage chat guid) is required" status:400];
         BOOL pinned = [body[@"pinned"] boolValue];
+        MWLog(@"[PIN] %@ %@ conversation %@", MWClientDesc(req), pinned ? @"pinned" : @"unpinned", MWChatLabel(chatGUID));
         NSDictionary *res = [[MWIMBridge shared] setPinned:pinned forChat:chatGUID];
         if ([res[@"ok"] boolValue]) {
             NSDictionary *chat = [[MWDatabase shared] chatWithGUID:chatGUID];
@@ -812,16 +942,32 @@ static MWResponse *MWRoute(MWRequest *req) {
         return [MWResponse json:res status:[res[@"ok"] boolValue] ? 200 : 400];
     }
     if (post && [p isEqualToString:@"/api/send"]) {
+        NSString *dest = MWStr(body[@"chat"]) ?: ([body[@"to"] isKindOfClass:NSArray.class] ? [body[@"to"] componentsJoinedByString:@","] : [body[@"to"] description]);
+        MWLog(@"[SEND] %@ sending iMessage to %@: text='%@'%@%@%@%@",
+              MWClientDesc(req),
+              MWChatLabel(dest),
+              MWSnippet(body[@"text"], 80),
+              body[@"subject"] ? [NSString stringWithFormat:@" subject='%@'", body[@"subject"]] : @"",
+              body[@"effect"] ? [NSString stringWithFormat:@" effect='%@'", body[@"effect"]] : @"",
+              body[@"replyTo"] ? [NSString stringWithFormat:@" replyTo=%@", body[@"replyTo"]] : @"",
+              [body[@"notifyAnyway"] boolValue] ? @" [Notify Anyway]" : @"");
         NSDictionary *res = [[MWIMBridge shared] sendText:MWStr(body[@"text"]) subject:MWStr(body[@"subject"])
                                                    toChat:MWStr(body[@"chat"]) addresses:MWAddressList(body[@"to"])
                                                    effect:MWStr(body[@"effect"]) replyTo:MWStr(body[@"replyTo"])
                                              notifyAnyway:[body[@"notifyAnyway"] boolValue]];
+        if ([res[@"ok"] boolValue]) {
+            MWLog(@"[SENT] Outbound iMessage queued successfully: guid=%@ to %@", res[@"guid"], MWChatLabel(res[@"chat"] ?: dest));
+        } else {
+            MWLog(@"[SEND-ERROR] Failed to send iMessage to %@: %@", MWChatLabel(dest), res[@"error"]);
+        }
         return [MWResponse json:res status:[res[@"ok"] boolValue] ? 200 : 400];
     }
     if (post && [p isEqualToString:@"/api/notify"]) {
         NSString *msgGUID = MWStr(body[@"message"]);
         NSString *chatGUID = MWStr(body[@"chat"]);
         if (!msgGUID || !chatGUID) return [MWResponse error:@"chat and message are required" status:400];
+        MWLog(@"[NOTIFY-ANYWAY] %@ triggered Focus/DND override ('Notify Anyway') for message guid=%@ in %@",
+              MWClientDesc(req), msgGUID, MWChatLabel(chatGUID));
         NSDictionary *res = [[MWIMBridge shared] notifyAnywayForMessage:msgGUID inChat:chatGUID];
         if ([res[@"ok"] boolValue]) {
             NSDictionary *m = [[MWDatabase shared] messageWithGUID:msgGUID];
@@ -842,6 +988,8 @@ static MWResponse *MWRoute(MWRequest *req) {
         NSString *chatGUID = MWStr(body[@"chat"]);
         NSString *text = MWStr(body[@"text"]);
         if (!msgGUID || !chatGUID || !text) return [MWResponse error:@"chat, message, and text are required" status:400];
+        MWLog(@"[EDIT] %@ edited message guid=%@ in %@: newText='%@'",
+              MWClientDesc(req), msgGUID, MWChatLabel(chatGUID), MWSnippet(text, 80));
         NSDictionary *res = [[MWIMBridge shared] editMessage:msgGUID newText:text inChat:chatGUID];
         return [MWResponse json:res status:[res[@"ok"] boolValue] ? 200 : 400];
     }
@@ -849,27 +997,50 @@ static MWResponse *MWRoute(MWRequest *req) {
         NSString *msgGUID = MWStr(body[@"message"]);
         NSString *chatGUID = MWStr(body[@"chat"]);
         if (!msgGUID || !chatGUID) return [MWResponse error:@"chat and message are required" status:400];
+        MWLog(@"[UNSEND] %@ unsent (retracted) message guid=%@ in %@",
+              MWClientDesc(req), msgGUID, MWChatLabel(chatGUID));
         NSDictionary *res = [[MWIMBridge shared] unsendMessage:msgGUID inChat:chatGUID];
         return [MWResponse json:res status:[res[@"ok"] boolValue] ? 200 : 400];
     }
     if (post && [p isEqualToString:@"/api/send-file"]) {
+        NSString *dest = MWStr(q[@"chat"]) ?: MWStr(q[@"to"]);
+        MWLog(@"[SEND-FILE] %@ sending file '%@' (%lu bytes) to %@%@",
+              MWClientDesc(req),
+              q[@"filename"] ?: @"attachment",
+              (unsigned long)req.body.length,
+              MWChatLabel(dest),
+              q[@"text"] ? [NSString stringWithFormat:@" caption='%@'", MWSnippet(q[@"text"], 60)] : @"");
         NSDictionary *res = [[MWIMBridge shared] sendFile:req.body filename:MWStr(q[@"filename"]) ?: @"attachment"
                                                    toChat:MWStr(q[@"chat"]) addresses:MWAddressList(q[@"to"])
                                                      text:MWStr(q[@"text"])];
+        if ([res[@"ok"] boolValue]) {
+            MWLog(@"[SENT-FILE] Outbound attachment queued successfully: guid=%@ transfer=%@ to %@",
+                  res[@"guid"], res[@"transfer"], MWChatLabel(dest));
+        } else {
+            MWLog(@"[SEND-FILE-ERROR] Failed to send attachment to %@: %@", MWChatLabel(dest), res[@"error"]);
+        }
         return [MWResponse json:res status:[res[@"ok"] boolValue] ? 200 : 400];
     }
     if (post && [p isEqualToString:@"/api/react"]) {
         if (!MWStr(body[@"message"]) || !MWStr(body[@"type"])) return [MWResponse error:@"message and type are required" status:400];
+        MWLog(@"[REACT] %@ %@ reaction '%@' on message guid=%@ in %@",
+              MWClientDesc(req), [body[@"remove"] boolValue] ? @"removed" : @"sent",
+              body[@"type"], body[@"message"], MWChatLabel(body[@"chat"]));
         NSDictionary *res = [[MWIMBridge shared] react:body[@"type"] remove:[body[@"remove"] boolValue]
                                              toMessage:body[@"message"] inChat:MWStr(body[@"chat"])];
         return [MWResponse json:res status:[res[@"ok"] boolValue] ? 200 : 400];
     }
     if (post && [p isEqualToString:@"/api/read"]) {
         if (!MWStr(body[@"chat"])) return [MWResponse error:@"chat is required" status:400];
+        MWLog(@"[MARK-READ] %@ marked conversation read: %@", MWClientDesc(req), MWChatLabel(body[@"chat"]));
         return [MWResponse json:[[MWIMBridge shared] markRead:body[@"chat"]]];
     }
     if (post && [p isEqualToString:@"/api/typing"]) {
         if (!MWStr(body[@"chat"])) return [MWResponse error:@"chat is required" status:400];
+        if (gVerbose) {
+            MWLog(@"[TYPING] %@ outgoing typing indicator set to %d in %@",
+                  MWClientDesc(req), [body[@"typing"] boolValue], MWChatLabel(body[@"chat"]));
+        }
         return [MWResponse json:[[MWIMBridge shared] setTyping:[body[@"typing"] boolValue] inChat:body[@"chat"]]];
     }
     return [MWResponse error:@"not found" status:404];
@@ -879,7 +1050,7 @@ static MWResponse *MWRoute(MWRequest *req) {
 
 static void MWPrefsNotificationCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     MWLoadConfig();
-    MWLog(@"reloaded preferences via Darwin notification (enabled=%d, requireAuth=%d)", gEnabled, gRequireAuth);
+    MWLog(@"reloaded preferences via Darwin notification (enabled=%d, verbose=%d, requireAuth=%d)", gEnabled, gVerbose, gRequireAuth);
 }
 
 int main(int argc, char *argv[]) {
@@ -932,8 +1103,16 @@ int main(int argc, char *argv[]) {
         MWHTTPServer *server = [MWHTTPServer new];
         server.handler = ^MWResponse *(MWRequest *req) {
             MWResponse *r = MWRoute(req);
-            if (![req.path isEqualToString:@"/api/events"] && ![req.path isEqualToString:@"/api/avatar"])
-                MWLog(@"%@ %@ %@ -> %ld", req.remoteAddress, req.method, req.path, (long)(r ? r.status : 404));
+            if (gVerbose) {
+                if (![req.path isEqualToString:@"/api/events"] && ![req.path isEqualToString:@"/api/avatar"]) {
+                    MWLog(@"[HTTP] %@ %@ %@ -> %ld (%lu bytes)",
+                          MWClientDesc(req), req.method, req.path, (long)(r ? r.status : 404), (unsigned long)r.body.length);
+                }
+            } else {
+                if (![req.path isEqualToString:@"/api/events"] && ![req.path isEqualToString:@"/api/avatar"]) {
+                    MWLog(@"%@ %@ %@ -> %ld", req.remoteAddress, req.method, req.path, (long)(r ? r.status : 404));
+                }
+            }
             return r;
         };
         NSError *err = nil;

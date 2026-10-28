@@ -75,7 +75,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* Main Chat Header */
 .chat-header { min-height: 58px; padding: 10px 18px; border-bottom: 1px solid var(--border); background: rgba(22, 25, 32, 0.85); backdrop-filter: blur(12px); display: flex; align-items: center; gap: 12px; z-index: 5; }
-.chat-header-info { display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1; }
+.chat-header-info { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .chat-avatar { width: 36px; height: 36px; border-radius: 50%; background: #2c3242; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; overflow: hidden; flex-shrink: 0; }
 .chat-meta { min-width: 0; }
 .chat-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

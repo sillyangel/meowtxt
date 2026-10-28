@@ -179,3 +179,38 @@ Connect with `EventSource('/api/events?token=<token>')` or `Authorization: Beare
 | `pinned` | `{ pinnedIdentifiers }` | Pinned conversations changed on iPhone or via API |
 | `dnd` | `{ handle, chat, dnd }` | Recipient's Focus / Do Not Disturb status changed |
 | `notification` | `{ id, type, title, body, chat, avatarUrl, icon, tag, message, timestamp }` | Push notification event (`received`, `sent`, `delivered`, `read`) |
+
+---
+
+## 7. Verbose Logging & Activity Audit
+
+`meowd` includes detailed real-time logging written directly to `/var/mobile/Library/Logs/meowd.log`. Verbose logging can be toggled on or off in the iPhone Settings app (**Settings → meowtxt → Verbose Logging** or key `verboseLogging` in `/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist`).
+
+### Log Events
+| Tag | Description | Example |
+|---|---|---|
+| `[VIEW]` | Client connected and loaded the web client interface | `[VIEW] 10.0.115.0 [Chrome] loaded Web Client (/) [Mozilla/5.0...]` |
+| `[HTTP]` | HTTP request method, path, response status, and payload bytes | `[HTTP] 10.0.115.0 [Chrome] GET /api/messages -> 200 (1168 bytes)` |
+| `[STATUS]` | Client queried daemon and iMessage health | `[STATUS] 10.0.115.0 [curl] queried system & iMessage health` |
+| `[CHATS]` | Client loaded conversation list | `[CHATS] 10.0.115.0 [Chrome] viewed conversations list (returned 3 chats)` |
+| `[ACCESS]` | Client accessed messages from a conversation | `[ACCESS] 10.0.115.0 [Chrome] accessed 50 messages from 'cielo' (iMessage;-;+13466771046)` |
+| `[ACCESS-MSG]`| Client accessed a single specific message | `[ACCESS-MSG] 10.0.115.0 [Chrome] viewing single message guid=...` |
+| `[ATTACHMENT-ACCESS]`| Client streamed an attachment | `[ATTACHMENT-ACCESS] 10.0.115.0 accessed attachment id=812 thumb=1 raw=0 (image/jpeg, 42100 bytes)` |
+| `[AVATAR-ACCESS]`| Client streamed a contact avatar | `[AVATAR-ACCESS] 10.0.115.0 accessed avatar for '+13466771046'` |
+| `[SEND]` | Client initiated sending a message | `[SEND] 10.0.115.0 sending to 'cielo': text='Hey there'` |
+| `[SENT]` | Outbound message queued successfully | `[SENT] Outbound message queued successfully: guid=5F89B3B2-...` |
+| `[OUTGOING]` | Outgoing message confirmed and indexed in `sms.db` | `[OUTGOING] Sent message in 'cielo': guid=... text='Hey there'` |
+| `[INCOMING]` | Inbound message received and indexed in `sms.db` | `[INCOMING] New message from 'cielo': guid=... text='...'` |
+| `[MARK-READ]` | Client marked conversation as read via API | `[MARK-READ] 10.0.115.0 marked conversation read: 'cielo'` |
+| `[READ-RECEIPT]`| Inbound read receipt received from recipient | `[READ-RECEIPT] Message read by recipient in 'cielo' (read at: 2026-10-27 20:51:28)` |
+| `[DELIVERY-RECEIPT]`| Delivery receipt confirmation received | `[DELIVERY-RECEIPT] Message delivered to 'cielo' (quietly=0)` |
+| `[NOTIFY-ANYWAY]`| Focus / Do Not Disturb override triggered | `[NOTIFY-ANYWAY] 10.0.115.0 overridden Focus/DND for message guid=...` |
+| `[EDIT]` | Message edited via iOS 16 Edit | `[EDIT] 10.0.115.0 edited message guid=... in 'cielo': newText='...'` |
+| `[UNSEND]` | Message unsent via iOS 16 Unsend | `[UNSEND] 10.0.115.0 unsent message guid=... in 'cielo'` |
+
+### Monitoring Logs in Real Time
+From the development machine:
+```bash
+ssh iphone 'tail -f /var/mobile/Library/Logs/meowd.log'
+```
+

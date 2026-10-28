@@ -15,7 +15,7 @@
 | **LaunchDaemon plist** | `/var/jb/Library/LaunchDaemons/dev.sillyangel.meowtxt.plist` |
 | **Web static root** | `/var/jb/usr/share/meowd/web/` (`index.html`, `style.css`, `app.js`, `sw.js`, `manifest.webmanifest`, `modules/*.js`) |
 | **PreferenceLoader & Bundle** | `/var/jb/Library/PreferenceLoader/Preferences/meowtxtPrefs.plist` & `/var/jb/Library/PreferenceBundles/meowtxtPrefs.bundle` |
-| **Config & token plist** | `/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist` (`enabled`, `token`, `port`, `notifReceived`, `notifSent`, `notifDelivered`, `notifRead`) |
+| **Config & token plist** | `/var/mobile/Library/Preferences/dev.sillyangel.meowtxt.plist` (`enabled`, `verboseLogging`, `token`, `port`, `notifReceived`, `notifSent`, `notifDelivered`, `notifRead`) |
 | **Daemon log** | `/var/mobile/Library/Logs/meowd.log` |
 | **JPEG/PNG transcode cache** | `/var/mobile/Library/Caches/meowd/v2_<attachment_rowid>[_thumb].{jpg,png}` |
 | **Default port** | `8737` (dual-stack IPv4/IPv6) |
